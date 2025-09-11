@@ -36,7 +36,7 @@ export default function MetaMaskConnection() {
         setAccount(connectedAccount);
         // Save the account to a cookie
         Cookies.set('userAccount', connectedAccount, { expires: 7 });
-        useRouter().push('/timer'); // Redirect to the timer page after successful connection
+        router.push('/timer'); // Redirect to the timer page after successful connection
       }
     } catch (err) {
       console.error("User rejected or error connecting:", err);

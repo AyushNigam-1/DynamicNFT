@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ethers } from 'ethers';
-import { contract, signer } from '../../lib/contract-utils';
+import { contract ,signer } from '../../lib/contract';
 
 /**
  * Handles POST requests to mint a new Study NFT.

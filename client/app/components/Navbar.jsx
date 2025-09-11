@@ -6,13 +6,6 @@ export default function Navbar({ account, onLogout }) {
     console.log("Navbar account:", account);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    const truncateAddress = (address) => {
-        if (!address) return '';
-        const start = address.substring(0, 6);
-        const end = address.substring(address.length - 4);
-        return `${start}...${end}`;
-    };
-
     return (
         <nav className="flex items-center justify-between p-4 bg-gray-700 shadow-md">
             <div className="text-xl font-bold text-gray-400">

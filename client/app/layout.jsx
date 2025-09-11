@@ -63,9 +63,11 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased `}>
-        <Navbar account={account} onLogout={handleLogout} />
-        {children}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased  `}>
+        <div className="min-h-screen bg-gray-800" >
+          <Navbar account={account} onLogout={handleLogout} />
+          {children}
+        </div>
       </body>
     </html>
   );

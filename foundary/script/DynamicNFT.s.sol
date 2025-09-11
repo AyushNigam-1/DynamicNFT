@@ -14,7 +14,7 @@ contract DeployStudyNFT is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy the contract.
-        StudyNFT studyNFT = new StudyNFT();
+        StudyNFT studyNFT = new StudyNFT(10);
 
         console.log("StudyNFT contract deployed to:", address(studyNFT));
 
