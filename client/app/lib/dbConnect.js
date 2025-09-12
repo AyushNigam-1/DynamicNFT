@@ -1,43 +1,16 @@
-import mongoose from 'mongoose';
+import Datastore from 'nedb';
 
-const MONGODB_URI = process.env.MONGODB_URI;
+// Use a simple global variable to cache the database instance
+let cachedDb = global.nedb;
 
-if (!MONGODB_URI) {
-  throw new Error(
-    'Please define the MONGODB_URI environment variable inside .env.local'
-  );
+if (!cachedDb) {
+  // If no cached instance exists, create one
+  cachedDb = global.nedb = new Datastore({ filename: './local-database.db', autoload: true });
 }
 
-/**
- * Global is used here to maintain a cached connection across hot reloads
- * in development. This prevents connections growing exponentially
- * during API Route usage.
- */
-let cached = global.mongoose;
-
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
-
+// The function now returns the cached database instance directly
 async function dbConnect() {
-  if (cached.conn) {
-    return cached.conn;
-  }
-
-  if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
-      // You may need to explicitly set `tls: true` for cloud providers
-      tls: true,
-      tlsAllowInvalidCertificates: true,
-    };
-
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose;
-    });
-  }
-  cached.conn = await cached.promise;
-  return cached.conn;
+  return cachedDb;
 }
 
 export default dbConnect;

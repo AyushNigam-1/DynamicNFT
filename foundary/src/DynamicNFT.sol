@@ -19,9 +19,12 @@ contract StudyNFT is ERC721URIStorage, Ownable {
         uint256 totalHours;
         uint256 level;
         uint256 lastUpdated;
+        uint256 tokenid;
     }
 
-    mapping(uint256 => StudyStats) public studyStats;
+    // This mapping links a user's address to their NFT's unique token ID.
+    // mapping(address => uint256) public userToTokenId;
+    mapping(address => StudyStats) public studyStats;
 
     // HOURS_PER_LEVEL is now a state variable, not a constant
     uint256 public HOURS_PER_LEVEL;
@@ -40,26 +43,35 @@ contract StudyNFT is ERC721URIStorage, Ownable {
         HOURS_PER_LEVEL = newHoursPerLevel;
     }
 
-    /// @notice Mint a new Study NFT to a user
-    function mint(address to) external onlyOwner {
-        uint256 tokenId = ++_nextTokenId;
-        _safeMint(to, tokenId);
-
-        studyStats[tokenId] = StudyStats({
-            totalHours: 0,
-            level: 1,
-            lastUpdated: block.timestamp
-        });
-
-        _setTokenURI(tokenId, _generateTokenURI(tokenId));
-    }
-
-    /// @notice Log study milestone (submitted by backend after verifying study hours)
-    function logStudyHours(uint256 tokenId, uint256 hoursToAdd) external onlyOwner {
-        require(ownerOf(tokenId) != address(0), "ERC721: URI query for nonexistent token");
+    /// @notice A single function to either mint a new NFT or update an existing one
+    function updateStudyTime(address to, uint256 hoursToAdd) external onlyOwner {
         require(hoursToAdd > 0, "Must add positive hours");
 
-        StudyStats storage stats = studyStats[tokenId];
+        // uint256 tokenId = userToTokenId[to];
+        uint256 tokenId = studyStats[to].tokenid ;
+        StudyStats storage stats;
+
+        // Check if the user already has a token
+        if (tokenId == 0) {
+            // Mint a new token
+            _nextTokenId++;
+            _safeMint(to, _nextTokenId);
+            tokenId = _nextTokenId;
+            
+            // Initialize new study stats
+            studyStats[to] = StudyStats({
+                totalHours: 0,
+                level: 0, // Set to 0 to ensure the first update correctly calculates level 1
+                lastUpdated: block.timestamp,
+                tokenid: _nextTokenId
+            });
+            stats = studyStats[to];
+        } else {
+            // Get the existing study stats
+            stats = studyStats[to];
+        }
+
+        // Add the new hours
         stats.totalHours += hoursToAdd;
 
         // Calculate new level
@@ -70,15 +82,12 @@ contract StudyNFT is ERC721URIStorage, Ownable {
 
         stats.lastUpdated = block.timestamp;
 
-        // Update metadata
-        _setTokenURI(tokenId, _generateTokenURI(tokenId));
-
         emit StudyMilestone(tokenId, stats.totalHours, stats.level);
     }
 
     /// @dev Generate metadata JSON dynamically
-    function _generateTokenURI(uint256 tokenId) private view returns (string memory) {
-        StudyStats memory stats = studyStats[tokenId];
+    function _generateTokenURI(address to , uint256 tokenId) private view returns (string memory) {
+        StudyStats memory stats = studyStats[to];
 
         string memory levelStr = stats.level.toString();
         string memory hoursStr = stats.totalHours.toString();
@@ -86,7 +95,7 @@ contract StudyNFT is ERC721URIStorage, Ownable {
         string memory json = string(abi.encodePacked(
             '{"name": "Study NFT #', tokenId.toString(), '",',
             '"description": "A dynamic NFT that evolves as the student studies.",',
-            '"image": "https://yourcdn.com/images/level', levelStr, '.png",',
+            '"image": "https://cdna.artstation.com/p/assets/images/images/054/698/976/large/hyodoru-fedor-lesnickov-cybo.jpg?1665146929",',
             '"attributes": [',
                 '{"trait_type": "Total Study Hours", "value": ', hoursStr, '},',
                 '{"trait_type": "Level", "value": ', levelStr, '}',
@@ -100,6 +109,6 @@ contract StudyNFT is ERC721URIStorage, Ownable {
     /// @notice Override tokenURI to always serve dynamic metadata
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
          require(ownerOf(tokenId) != address(0), "ERC721: URI query for nonexistent token");
-         return _generateTokenURI(tokenId);
+         return _generateTokenURI(ownerOf(tokenId) ,tokenId);
     }
 }

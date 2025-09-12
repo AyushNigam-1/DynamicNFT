@@ -99,21 +99,44 @@ export default function Home() {
             const updatedData = saveTimeResponse.data;
             const updatedTotalTime = updatedData.totalStudyTime;
             setTotalStudyTime(updatedTotalTime);
-            console.log("Study time saved successfully. New total time:", updatedTotalTime);
+            console.log("Study time saved successfully. New total time:", updatedTotalTime / 3600, hoursPerLevel);
 
             // Check if total study time has crossed the threshold for minting
-            if (updatedTotalTime / 3600 >= hoursPerLevel) {
+            if (updatedTotalTime / 3600 >= -1) {
                 setIsMinting(true);
                 setPopupMessage("Session complete! Minting your NFT reward...");
                 setShowPopup(true);
 
                 // Call the minting API
-                const mintResponse = await axios.post('/api/mint', { to: account });
+                const mintResponse = await axios.post('/api/mint-nft', { to: account, hours: 1 });
 
-                const data = mintResponse.data;
-                setPopupMessage(`Hurrah! You have completed your very first session and received NFT with Token ID: ${data.tokenId}!`);
+                const { tokenId, contractAddress, txHash } = mintResponse.data;
+                console.log(tokenId, contractAddress, txHash)
+                // Optional: prompt MetaMask to track NFT
+                // if (window.ethereum) {
+                //     try {
+                //         // This is the updated call to MetaMask
+                //         await window.ethereum.request({
+                //             method: 'wallet_watchAsset',
+                //             params: {
+                //                 type: 'ERC721',
+                //                 options: {
+                //                     address: contractAddress, // The NFT contract address
+                //                     tokenId: tokenId, // The tokenId from the backend response
+                //                     symbol: "STUDY",
+                //                     decimals: 0,
+                //                 },
+                //             },
+                //         });
+                //     } catch (err) {
+                //         console.warn("User rejected asset watch request:", err);
+                //     }
+                // }
 
-            } else {
+                setPopupMessage(`🎉 NFT Minted! Token ID: ${tokenId}. 
+        [View Transaction](https://sepolia.etherscan.io/tx/${txHash})`);
+            }
+            else {
                 setPopupMessage("Session complete! Keep studying to earn your NFT reward.");
                 setShowPopup(true);
             }

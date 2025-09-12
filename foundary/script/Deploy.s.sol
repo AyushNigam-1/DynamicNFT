@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Script.sol";
 import "../src/DynamicNFT.sol";
 
-contract DeployStudyNFT is Script {
+contract Deploy is Script {
     function setUp() public {}
 
     function run() public {
@@ -14,7 +14,7 @@ contract DeployStudyNFT is Script {
         vm.startBroadcast(deployerPrivateKey);
 
         // Deploy the contract.
-        StudyNFT studyNFT = new StudyNFT(10);
+        StudyNFT studyNFT = new StudyNFT(1);
 
         console.log("StudyNFT contract deployed to:", address(studyNFT));
 

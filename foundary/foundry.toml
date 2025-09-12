@@ -5,4 +5,8 @@ libs = ["lib"]
 remappings = [
     "@openzeppelin/=lib/openzeppelin-contracts/"
 ]
+
+[rpc_endpoints]
+holesky = "https://ethereum-holesky-rpc.publicnode.com"
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

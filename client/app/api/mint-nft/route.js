@@ -1,40 +1,56 @@
 import { NextResponse } from 'next/server';
 import { ethers } from 'ethers';
-import { contract ,signer } from '../../lib/contract';
 
-/**
- * Handles POST requests to mint a new Study NFT.
- * Expects the 'to' address of the recipient in the request body.
- */
+// Import the pre-initialized contract instance from your external file.
+import { contract } from '../../lib/contract'; // Adjust the path as needed
+
 export async function POST(request) {
-  // Check if the backend has a signer to send transactions.
-  if (!signer) {
-    return NextResponse.json({ error: "Private key not configured on the backend." }, { status: 500 });
-  }
+  // The 'contract' object is now imported and correctly initialized.
+  // We can safely remove the old signer check, as it's handled in the import file.
 
   try {
-    const { to } = await request.json();
-    
-    // Validate that the provided address is in a valid format.
+    const { to, hours } = await request.json();
+
+    // Validate that the provided address and hour are in a valid format.
     if (!to || !ethers.isAddress(to)) {
       return NextResponse.json({ error: "Invalid recipient address ('to') provided." }, { status: 400 });
     }
+    if (typeof hours !== 'number' || hours <= 0) {
+      return NextResponse.json({ error: "Invalid study hour ('hour') provided." }, { status: 400 });
+    }
 
-    // Call the contract's mint function using the backend's signer.
-    console.log(`Attempting to mint a new token to ${to}...`);
-    const tx = await contract.mint(to);
-    
-    // Wait for the transaction to be mined on the blockchain.
-    await tx.wait();
+    // Call the contract's updateStudyTime function using the backend's signer.
+    console.log(`Attempting to update study time for ${to}...`);
+    const filter = contract.filters.StudyMilestone();
 
-    console.log(`Mint successful! Transaction Hash: ${tx.hash}`);
-    return NextResponse.json({ 
-      success: true, 
+    // After sending tx
+    const tx = await contract.updateStudyTime(to, hours);
+    const receipt = await tx.wait();
+
+    // Query the block for just that event
+    const events = await contract.queryFilter(filter, receipt.blockNumber, receipt.blockNumber);
+    let tokenId = null;
+    for (const e of events) {
+      tokenId = e.args.tokenId.toString();
+      console.log("Hours:", e.args.totalHours.toString());
+      console.log("Level:", e.args.newLevel.toString());
+    }
+
+    console.log(`Update successful! Transaction Hash: ${tx.hash}`);
+    return NextResponse.json({
+      success: true,
       txHash: tx.hash,
-      message: `Minted token to address ${to}.` 
+      tokenId, // Now returning the tokenId
+      contractAddress: contract.target,
+      message: `Updated study time for address ${to}.`
     });
+
   } catch (error) {
-    console.error("Failed to mint NFT:", error);
-    return NextResponse.json({ error: "Failed to mint NFT." }, { status: 500 });
+    console.error("Failed to update study time:", error);
+    // Log the full error to the console for debugging
+    console.error("Full error object:", error);
+
+    // Return a more generic error to the user
+    return NextResponse.json({ error: "Failed to update study time on the blockchain." }, { status: 500 });
   }
 }
