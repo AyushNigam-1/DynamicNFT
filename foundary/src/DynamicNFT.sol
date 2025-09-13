@@ -29,7 +29,8 @@ contract StudyNFT is ERC721URIStorage, Ownable {
     // HOURS_PER_LEVEL is now a state variable, not a constant
     uint256 public HOURS_PER_LEVEL;
 
-    event StudyMilestone(uint256 indexed tokenId, uint256 totalHours, uint256 newLevel);
+    event Minted(address indexed to, uint256 indexed tokenId);
+    event StudyMilestone( uint256 totalHours, uint256 newLevel);
 
     // The constructor now accepts the initial value for HOURS_PER_LEVEL
     constructor(uint256 initialHoursPerLevel) ERC721("StudyNFT", "STUDY") Ownable(msg.sender) {
@@ -43,72 +44,62 @@ contract StudyNFT is ERC721URIStorage, Ownable {
         HOURS_PER_LEVEL = newHoursPerLevel;
     }
 
-    /// @notice A single function to either mint a new NFT or update an existing one
-    function updateStudyTime(address to, uint256 hoursToAdd) external onlyOwner {
-        require(hoursToAdd > 0, "Must add positive hours");
+    function mint(address to) external onlyOwner {
+        _nextTokenId++;
+        uint256 newItemId = _nextTokenId;
 
-        // uint256 tokenId = userToTokenId[to];
-        uint256 tokenId = studyStats[to].tokenid ;
-        StudyStats storage stats;
+        // Mint the token to the recipient.
+        _safeMint(to, newItemId);
+        
+        // Initialize new study stats for the token.
+        studyStats[to] = StudyStats({
+            totalHours: 0,
+            level: 0,
+            lastUpdated: block.timestamp,
+            tokenid: newItemId
+        });
+        
+        emit Minted(to, newItemId);
+    }
 
-        // Check if the user already has a token
-        if (tokenId == 0) {
-            // Mint a new token
-            _nextTokenId++;
-            _safeMint(to, _nextTokenId);
-            tokenId = _nextTokenId;
-            
-            // Initialize new study stats
-            studyStats[to] = StudyStats({
-                totalHours: 0,
-                level: 0, // Set to 0 to ensure the first update correctly calculates level 1
-                lastUpdated: block.timestamp,
-                tokenid: _nextTokenId
-            });
-            stats = studyStats[to];
-        } else {
-            // Get the existing study stats
-            stats = studyStats[to];
-        }
-
-        // Add the new hours
+    /// @notice Updates the study stats of an existing NFT.
+    function updateStudyHours(address user , uint256 hoursToAdd) external onlyOwner {
+        require(hoursToAdd > 0, "Must add positive hours.");
+        
+        StudyStats storage stats = studyStats[user];
+        
+        // Update total hours.
         stats.totalHours += hoursToAdd;
 
-        // Calculate new level
-        uint256 newLevel = (stats.totalHours / HOURS_PER_LEVEL) + 1;
+        // Calculate new level and update if it's higher than the current one.
+        uint256 newLevel = stats.totalHours / HOURS_PER_LEVEL;
         if (newLevel > stats.level) {
             stats.level = newLevel;
         }
 
+        // Update the timestamp.
         stats.lastUpdated = block.timestamp;
-
-        emit StudyMilestone(tokenId, stats.totalHours, stats.level);
+        
+        emit StudyMilestone(stats.totalHours, stats.level);
     }
 
-    /// @dev Generate metadata JSON dynamically
-    function _generateTokenURI(address to , uint256 tokenId) private view returns (string memory) {
-        StudyStats memory stats = studyStats[to];
-
-        string memory levelStr = stats.level.toString();
-        string memory hoursStr = stats.totalHours.toString();
-
+    /// @dev Overrides the tokenURI function to provide dynamic metadata.
+    function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
+        require(ownerOf(tokenId) != address(0), "ERC721: URI query for nonexistent token");
+        
+        StudyStats memory stats = studyStats[ownerOf(tokenId)];
+        
         string memory json = string(abi.encodePacked(
             '{"name": "Study NFT #', tokenId.toString(), '",',
-            '"description": "A dynamic NFT that evolves as the student studies.",',
-            '"image": "https://cdna.artstation.com/p/assets/images/images/054/698/976/large/hyodoru-fedor-lesnickov-cybo.jpg?1665146929",',
+            '"description": "An evolving NFT representing study progress.",',
             '"attributes": [',
-                '{"trait_type": "Total Study Hours", "value": ', hoursStr, '},',
-                '{"trait_type": "Level", "value": ', levelStr, '}',
+                '{"trait_type": "Total Hours", "value": ', stats.totalHours.toString(), '},',
+                '{"trait_type": "Level", "value": ', stats.level.toString(), '}',
             ']}'
         ));
-
-        string memory encodedJson = Base64.encode(bytes(json));
-        return string(abi.encodePacked("data:application/json;base64,", encodedJson));
-    }
-
-    /// @notice Override tokenURI to always serve dynamic metadata
-    function tokenURI(uint256 tokenId) public view override returns (string memory) {
-         require(ownerOf(tokenId) != address(0), "ERC721: URI query for nonexistent token");
-         return _generateTokenURI(ownerOf(tokenId) ,tokenId);
+        
+        // We'll use a placeholder image and a Base64-encoded JSON string for simplicity.
+        string memory base64Json = Base64.encode(bytes(json));
+        return string(abi.encodePacked("data:application/json;base64,", base64Json));
     }
 }

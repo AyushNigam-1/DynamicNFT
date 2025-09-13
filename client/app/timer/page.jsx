@@ -3,23 +3,9 @@
 import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import axios from 'axios';
-
+import Modal from '../components/Modal';
+import { get } from 'http';
 // Modal component for the pop-up
-const Modal = ({ message, onClose }) => {
-    return (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
-            <div className="bg-gray-700 rounded-xl p-8 max-w-sm mx-4 text-center space-y-4 shadow-xl border border-gray-600">
-                <p className="text-xl font-semibold text-white">{message}</p>
-                <button
-                    onClick={onClose}
-                    className="px-6 py-2 font-semibold text-lg text-gray-800 bg-teal-400 rounded-full hover:bg-teal-500 transition-colors duration-200 focus:outline-none"
-                >
-                    Close
-                </button>
-            </div>
-        </div>
-    );
-};
 
 const timerDurationInSeconds = 1 * 10; // 60 minutes
 
@@ -27,11 +13,12 @@ export default function Home() {
     const [secondsLeft, setSecondsLeft] = useState(timerDurationInSeconds);
     const [isRunning, setIsRunning] = useState(false);
     const [isDone, setIsDone] = useState(false);
-    const [hoursPerLevel, setHoursPerLevel] = useState(0);
+    const [hoursPerLevel, setHoursPerLevel] = useState(1); // Initialize with 1 to prevent NaN
     const [showPopup, setShowPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState("");
     const [isMinting, setIsMinting] = useState(false);
     const [totalStudyTime, setTotalStudyTime] = useState(0);
+    const [nftImageUri, setNftImageUri] = useState(null);
 
     // Fetch total study time when the component loads or a session is completed
     useEffect(() => {
@@ -39,7 +26,7 @@ export default function Home() {
             const account = Cookies.get('userAccount');
             if (account) {
                 try {
-                    const response = await axios.get('/api/log-study-hours/mongo', {
+                    const response = await axios.get('/api/log-study-hours/database', {
                         params: { userId: account }
                     });
                     console.log("Fetched total study time:", response.data.totalStudyTime);
@@ -56,8 +43,10 @@ export default function Home() {
     useEffect(() => {
         const fetchHoursPerLevel = async () => {
             try {
-                const response = await axios.get('/api/get-hours');
-                setHoursPerLevel(Number(response.data.hoursPerLevel));
+                const response = await axios.get('/api/hours-per-level');
+                // Ensure value is a number and not 0 to prevent division issues
+                const hours = Number(response.data.hoursPerLevel);
+                setHoursPerLevel(hours > 0 ? hours : 1);
             } catch (error) {
                 console.error("Error fetching HOURS_PER_LEVEL:", error);
             }
@@ -87,11 +76,40 @@ export default function Home() {
         }
     }, [isDone]);
 
+    // Check for a saved timer state in a cookie on initial load
+    useEffect(() => {
+        const savedTime = Number(Cookies.get('timerSeconds'));
+        if (savedTime) {
+            setSecondsLeft(savedTime);
+        }
+    }, []);
+
+    // Save timer state to cookie every second while running
+    useEffect(() => {
+        if (isRunning) {
+            Cookies.set('timerSeconds', secondsLeft.toString());
+        }
+    }, [secondsLeft, isRunning]);
+
+
+    const getNftImageUri = async (tokenId) => {
+        const nftUriResponse = await axios.get('/api/nft', { params: { tokenId } });
+        const nftUri = nftUriResponse.data.tokenURI;
+        if (nftUri) {
+            const base64Data = nftUri.split(',')[1];
+            const decodedJson = atob(base64Data);
+            const nftMetadata = JSON.parse(decodedJson);
+            setNftImageUri(nftMetadata.image);
+        }
+    }
+
     const handleSessionComplete = async () => {
         const account = Cookies.get('userAccount');
         try {
+            const oldTotalTime = totalStudyTime;
+
             // Save the newly completed study time to the database
-            const saveTimeResponse = await axios.post('/api/log-study-hours/mongo', {
+            const saveTimeResponse = await axios.post('/api/log-study-hours/database', {
                 userId: account,
                 timeInSeconds: timerDurationInSeconds
             });
@@ -99,19 +117,27 @@ export default function Home() {
             const updatedData = saveTimeResponse.data;
             const updatedTotalTime = updatedData.totalStudyTime;
             setTotalStudyTime(updatedTotalTime);
-            console.log("Study time saved successfully. New total time:", updatedTotalTime / 3600, hoursPerLevel);
+
+            const oldLevel = Math.floor(oldTotalTime / 3600 / hoursPerLevel);
+            const newLevel = Math.floor(updatedTotalTime / 3600 / hoursPerLevel);
 
             // Check if total study time has crossed the threshold for minting
-            if (updatedTotalTime / 3600 >= -1) {
+            if (newLevel > oldLevel) {
                 setIsMinting(true);
                 setPopupMessage("Session complete! Minting your NFT reward...");
                 setShowPopup(true);
 
                 // Call the minting API
-                const mintResponse = await axios.post('/api/mint-nft', { to: account, hours: 1 });
+                const mintResponse = await axios.post('/api/log-study-hours/contract', { to: account, hours: 1 });
 
                 const { tokenId, contractAddress, txHash } = mintResponse.data;
                 console.log(tokenId, contractAddress, txHash)
+
+                // Fetch the NFT URI using the token ID
+                const nftUri = getNftImageUri(tokenId);
+                setNftImageUri(nftUri);
+
+
                 // Optional: prompt MetaMask to track NFT
                 // if (window.ethereum) {
                 //     try {
@@ -150,25 +176,11 @@ export default function Home() {
         }
     };
 
-    // Check for a saved timer state in a cookie on initial load
-    useEffect(() => {
-        const savedTime = Cookies.get('timerSeconds');
-        if (savedTime) {
-            setSecondsLeft(Number(savedTime));
-        }
-    }, []);
-
-    // Save timer state to cookie every second while running
-    useEffect(() => {
-        if (isRunning) {
-            Cookies.set('timerSeconds', secondsLeft.toString());
-        }
-    }, [secondsLeft, isRunning]);
 
     const formatTime = (timeInSeconds) => {
         const hours = Math.floor(timeInSeconds / 3600);
         const minutes = Math.floor((timeInSeconds % 3600) / 60);
-        const seconds = timeInSeconds % 60;
+        const seconds = Math.floor(timeInSeconds % 60);
         const pad = (num) => num.toString().padStart(2, '0');
         return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
     };
@@ -192,20 +204,51 @@ export default function Home() {
         Cookies.remove('timerSeconds');
     };
 
+    if (hoursPerLevel === 0) {
+        return <div className="flex items-center justify-center h-screen text-white">Loading...</div>;
+    }
+
     const overallStudyTimeInHours = totalStudyTime / 3600;
-    const sessionTimeInHours = timerDurationInSeconds / 3600;
+    const currentLevel = Math.floor(overallStudyTimeInHours / hoursPerLevel) + 1;
+    const nextLevelGoalInHours = currentLevel * hoursPerLevel;
+    console.log(currentLevel, nextLevelGoalInHours - overallStudyTimeInHours, hoursPerLevel)
+    const timeToNextLevelInSeconds = (nextLevelGoalInHours + 1 - overallStudyTimeInHours) * 3600;
+
     const progressSinceLastLevel = overallStudyTimeInHours % hoursPerLevel;
-    const progressPercentage = (progressSinceLastLevel / hoursPerLevel) * 100;
+    const sessionTimeInHours = timerDurationInSeconds / 3600;
     const newProgressPercentage = ((progressSinceLastLevel + sessionTimeInHours) / hoursPerLevel) * 100;
     const revealPercentage = Math.min(Math.max(newProgressPercentage, 0), 100);
 
     return (
-        <div className="flex items-center flex-col justify-center  text-white p-4 gap-8 ">
+        <div className="flex items-center flex-col justify-center  text-white p-8 gap-8 w-[60vw] m-auto">
             {showPopup && <Modal message={popupMessage} onClose={() => setShowPopup(false)} />}
-            <p className="mt-4 text-xl font-semibold text-gray-400">
-                Total Study Time: {formatTime(totalStudyTime)}
-            </p>
-            <div className='bg-gray-700 w-[60vw] rounded-xl flex  flex-col justify-center gap-8 p-8'>
+            <div className='flex w-full gap-8'>
+                <div className=" text-xl  text-gray-500 bg-gray-700 flex flex-col w-full rounded-xl items-center justify-center py-4">
+                    <p className='font-semibold' >
+                        Total Time
+                    </p>
+                    <p className='text-3xl font-mono font-bold text-gray-400'>
+                        {formatTime(totalStudyTime)}
+                    </p>
+                </div>
+                <div className="text-xl font-semibold py-6 px-8 rounded-full  text-gray-500 bg-gray-700 ">
+                    <p className='text-center ' >
+                        Level
+                    </p>
+                    <p className='text-3xl font-mono font-bold text-center text-gray-400'>
+                        {currentLevel}
+                    </p>
+                </div>
+                <div className="text-xl font-semibold text-gray-500 bg-gray-700 flex flex-col w-full rounded-xl items-center justify-center py-4">
+                    <p className='text-center' >
+                        Next Level
+                    </p>
+                    <p className='text-3xl font-mono font-bold text-gray-400'>
+                        {formatTime(Math.max(timeToNextLevelInSeconds, 0))}
+                    </p>
+                </div>
+            </div>
+            <div className='bg-gray-700 w-full  rounded-xl flex  flex-col justify-center gap-8 p-8'>
                 <div className=" flex flex-col items-center justify-center ">
                     <span className="text-9xl font-mono font-bold text-gray-400">
                         {formatTime(secondsLeft)}
@@ -247,18 +290,28 @@ export default function Home() {
                     )}
                 </div>
             </div>
-            <div className="space-y-4 ">
-                <div className="relative aspect-video w-[60vw] h-80 bg-gray-700 rounded-xl overflow-hidden ">
-                    <img
-                        src="https://placehold.co/600x400/3282b8/ffffff?text=STUDY+COMPLETED"
-                        alt="Reward image"
-                        className="absolute inset-0 w-full h-full object-cover transition-all duration-1000"
-                        style={{ clipPath: `inset(${100 - revealPercentage}% 0 0 0)` }}
-                    />
-                    {revealPercentage < 100 && (
-                        <div className="absolute inset-0 bg-gray-700 flex items-center justify-center opacity-75">
-                            <p className="text-center text-3xl text-gray-400">Progress: {Math.floor(revealPercentage)}%</p>
-                        </div>
+            <div className="space-y-4 w-full">
+                <div className="relative w-full aspect-video h-80 bg-gray-700 rounded-xl overflow-hidden ">
+                    {nftImageUri ? (
+                        <img
+                            src={nftImageUri}
+                            alt="Your minted NFT reward"
+                            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000"
+                        />
+                    ) : (
+                        <>
+                            <img
+                                src="https://placehold.co/600x400/3282b8/ffffff?text=STUDY+COMPLETED"
+                                alt="Reward image"
+                                className="absolute inset-0 w-full h-full object-cover transition-all duration-1000"
+                                style={{ clipPath: `inset(${100 - revealPercentage}% 0 0 0)` }}
+                            />
+                            {revealPercentage < 100 && (
+                                <div className="absolute inset-0 bg-gray-700 flex items-center justify-center opacity-75">
+                                    <p className="text-center text-3xl text-gray-400">Progress: {Math.floor(revealPercentage)}%</p>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
