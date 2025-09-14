@@ -1,15 +1,11 @@
-/ app/api / nft - data / route.js
-// This API route handles setting and getting a user's NFT token ID using the App Router syntax.
-
 import { NextResponse } from 'next/server';
-import { dbConnect } from '@/lib/dbConnect';
-
+import dbConnect from '../../lib/dbConnect';
 // GET request to retrieve a token ID for a given user address.
 export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
         const userAddress = searchParams.get('userAddress');
-
+        console.log(searchParams)
         if (!userAddress) {
             return NextResponse.json({ error: 'Missing userAddress in query parameters' }, { status: 400 });
         }
@@ -38,7 +34,7 @@ export async function GET(request) {
 export async function POST(request) {
     try {
         const { userAddress, tokenId } = await request.json();
-
+        console.log(userAddress, tokenId)
         if (!userAddress || tokenId === undefined) {
             return NextResponse.json({ error: 'Missing userAddress or tokenId in request body' }, { status: 400 });
         }

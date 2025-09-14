@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { contract, signer } from '../../lib/contract-utils';
+import { contract, signer } from '../../lib/contract';
 import { ethers } from 'ethers';
 
 /**
@@ -44,18 +44,26 @@ export async function POST(request) {
     if (!to || !ethers.isAddress(to)) {
       return NextResponse.json({ error: "Invalid recipient address ('to') provided." }, { status: 400 });
     }
+    console.log(contract.filters)
+    const filter = contract.filters.Minted();
 
     // Call the contract's mint function using the backend's signer.
     console.log(`Attempting to mint a new token to ${to}...`);
     const tx = await contract.mint(to);
 
     // Wait for the transaction to be mined on the blockchain.
-    await tx.wait();
+    const receipt = await tx.wait();
 
+    // Query the block for just that event
+    const events = await contract.queryFilter(filter, receipt.blockNumber, receipt.blockNumber);
+    let tokenId = null;
+    for (const e of events) {
+      tokenId = e.args.tokenId.toString();
+    }
     console.log(`Mint successful! Transaction Hash: ${tx.hash}`);
     return NextResponse.json({
       success: true,
-      txHash: tx.hash,
+      tokenId,
       message: `Minted token to address ${to}.`
     });
   } catch (error) {

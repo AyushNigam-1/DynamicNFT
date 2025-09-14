@@ -43,16 +43,19 @@ export default function MetaMaskConnection() {
         setIsProcessing(true);
 
         // Check if the user exists in the database
-        const checkResponse = await axios.get(`/api/user-check?userId=${connectedAccount}`);
+        console.log(connectedAccount)
+        const checkResponse = await axios.get(`/api/user/?userAddress=${connectedAccount}`);
 
-        if (!checkResponse.data.userExists) {
+        if (!checkResponse.data.success) {
           // If the user does not exist, mint an NFT and create a new user record
           setStatusMessage("New user detected. Minting your first NFT and registering you...");
-          const mintResponse = await axios.post('/api/mint-and-register', { userId: connectedAccount });
+          const mintResponse = await axios.post('/api/nft', { to: connectedAccount });
 
           if (mintResponse.data.success) {
             setStatusMessage(`Minting complete! Your token ID is ${mintResponse.data.tokenId}.`);
             // Save the account and redirect
+            await axios.post('/api/tokenid', { userAddress: connectedAccount, tokenId: mintResponse.data.tokenId });
+
             Cookies.set('userAccount', connectedAccount, { expires: 7 });
             router.push('/timer');
           } else {
@@ -63,6 +66,7 @@ export default function MetaMaskConnection() {
           // If the user already exists, just save and redirect
           setStatusMessage("Welcome back! You are already registered.");
           Cookies.set('userAccount', connectedAccount, { expires: 7 });
+          console.log("User already registered:", checkResponse.data.user);
           router.push('/timer');
         }
       }

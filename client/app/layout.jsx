@@ -6,7 +6,7 @@ import { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/app/components/Navbar";
-
+import { useRouter } from "next/navigation";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -26,7 +26,7 @@ export default function RootLayout({
   children,
 }) {
   const [account, setAccount] = useState(null);
-
+  const router = useRouter();
   useEffect(() => {
     // Check for cookie on initial load
     const savedAccount = Cookies.get('userAccount');
@@ -59,6 +59,7 @@ export default function RootLayout({
   const handleLogout = () => {
     setAccount(null);
     Cookies.remove('userAccount');
+    router.push('/');
   };
 
   return (

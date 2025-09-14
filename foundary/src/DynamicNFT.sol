@@ -92,6 +92,7 @@ contract StudyNFT is ERC721URIStorage, Ownable {
         string memory json = string(abi.encodePacked(
             '{"name": "Study NFT #', tokenId.toString(), '",',
             '"description": "An evolving NFT representing study progress.",',
+            '"image": "https://cdna.artstation.com/p/assets/images/images/054/698/976/large/hyodoru-fedor-lesnickov-cybo.jpg?1665146929",',
             '"attributes": [',
                 '{"trait_type": "Total Hours", "value": ', stats.totalHours.toString(), '},',
                 '{"trait_type": "Level", "value": ', stats.level.toString(), '}',

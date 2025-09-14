@@ -11,21 +11,20 @@ export async function GET(request) {
 
     try {
         const { searchParams } = new URL(request.url);
-        const userId = searchParams.get('userId');
+        const userAddress = searchParams.get('userAddress');
 
-        if (!userId) {
+        if (!userAddress) {
             return NextResponse.json({ success: false, error: 'User ID is required.' }, { status: 400 });
         }
 
         // NeDB's findOne method
         const studyTime = await new Promise((resolve, reject) => {
-            db.findOne({ userId }, (err, doc) => {
+            db.findOne({ userAddress }, (err, doc) => {
                 if (err) reject(err);
                 resolve(doc);
             });
         });
-
-        if (!studyTime) {
+        if (!studyTime.totalStudyTime) {
             // If no record is found, return a default of 0.
             return NextResponse.json({ success: true, totalStudyTime: 0 });
         }
@@ -46,16 +45,16 @@ export async function POST(request) {
     const db = await dbConnect();
 
     try {
-        const { userId, timeInSeconds } = await request.json();
+        const { userAddress, timeInSeconds } = await request.json();
 
-        if (!userId || typeof timeInSeconds !== 'number') {
+        if (!userAddress || typeof timeInSeconds !== 'number') {
             return NextResponse.json({ success: false, error: 'User ID and time are required.' }, { status: 400 });
         }
 
         // NeDB's update with upsert to find and increment or create
         const updatedDoc = await new Promise((resolve, reject) => {
             db.update(
-                { userId },
+                { userAddress },
                 { $inc: { totalStudyTime: timeInSeconds } },
                 { upsert: true, returnUpdatedDocs: true },
                 (err, numAffected, newDoc) => {

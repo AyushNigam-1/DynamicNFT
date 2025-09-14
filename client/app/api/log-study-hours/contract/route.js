@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 
 // Import the pre-initialized contract instance from your external file.
-import { contract } from '../../lib/contract'; // Adjust the path as needed
+import { contract } from '../../../lib/contract';
 
 export async function POST(request) {
   // The 'contract' object is now imported and correctly initialized.
@@ -24,14 +24,12 @@ export async function POST(request) {
     const filter = contract.filters.StudyMilestone();
 
     // After sending tx
-    const tx = await contract.updateStudyTime(to, hours);
+    const tx = await contract.updateStudyHours(to, hours);
     const receipt = await tx.wait();
 
     // Query the block for just that event
     const events = await contract.queryFilter(filter, receipt.blockNumber, receipt.blockNumber);
-    let tokenId = null;
     for (const e of events) {
-      tokenId = e.args.tokenId.toString();
       console.log("Hours:", e.args.totalHours.toString());
       console.log("Level:", e.args.newLevel.toString());
     }
@@ -40,7 +38,6 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       txHash: tx.hash,
-      tokenId, // Now returning the tokenId
       contractAddress: contract.target,
       message: `Updated study time for address ${to}.`
     });

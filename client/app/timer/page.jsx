@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import axios from 'axios';
 import Modal from '../components/Modal';
-import { get } from 'http';
-// Modal component for the pop-up
 
 const timerDurationInSeconds = 1 * 10; // 60 minutes
 
@@ -24,10 +22,11 @@ export default function Home() {
     useEffect(() => {
         const fetchTotalStudyTime = async () => {
             const account = Cookies.get('userAccount');
+            console.log("Fetching total study time for account:", account);
             if (account) {
                 try {
                     const response = await axios.get('/api/log-study-hours/database', {
-                        params: { userId: account }
+                        params: { userAddress: account }
                     });
                     console.log("Fetched total study time:", response.data.totalStudyTime);
                     setTotalStudyTime(response.data.totalStudyTime);
@@ -90,15 +89,19 @@ export default function Home() {
             Cookies.set('timerSeconds', secondsLeft.toString());
         }
     }, [secondsLeft, isRunning]);
+    useEffect(() => {
+        getNftImageUri();
+    }, [])
 
-
-    const getNftImageUri = async (tokenId) => {
-        const nftUriResponse = await axios.get('/api/nft', { params: { tokenId } });
+    const getNftImageUri = async () => {
+        const { data } = await axios.get('/api/tokenid', { params: { userAddress: Cookies.get('userAccount') } });
+        const nftUriResponse = await axios.get('/api/nft', { params: { tokenId: data.tokenId } });
         const nftUri = nftUriResponse.data.tokenURI;
         if (nftUri) {
             const base64Data = nftUri.split(',')[1];
             const decodedJson = atob(base64Data);
             const nftMetadata = JSON.parse(decodedJson);
+            console.log("Fetched NFT metadata:", nftMetadata);
             setNftImageUri(nftMetadata.image);
         }
     }
@@ -110,7 +113,7 @@ export default function Home() {
 
             // Save the newly completed study time to the database
             const saveTimeResponse = await axios.post('/api/log-study-hours/database', {
-                userId: account,
+                userAddress: account,
                 timeInSeconds: timerDurationInSeconds
             });
 
@@ -120,7 +123,6 @@ export default function Home() {
 
             const oldLevel = Math.floor(oldTotalTime / 3600 / hoursPerLevel);
             const newLevel = Math.floor(updatedTotalTime / 3600 / hoursPerLevel);
-
             // Check if total study time has crossed the threshold for minting
             if (newLevel > oldLevel) {
                 setIsMinting(true);
@@ -128,14 +130,10 @@ export default function Home() {
                 setShowPopup(true);
 
                 // Call the minting API
-                const mintResponse = await axios.post('/api/log-study-hours/contract', { to: account, hours: 1 });
-
-                const { tokenId, contractAddress, txHash } = mintResponse.data;
-                console.log(tokenId, contractAddress, txHash)
+                await axios.post('/api/log-study-hours/contract', { to: account, hours: 1 })
 
                 // Fetch the NFT URI using the token ID
-                const nftUri = getNftImageUri(tokenId);
-                setNftImageUri(nftUri);
+                getNftImageUri(tokenId);
 
 
                 // Optional: prompt MetaMask to track NFT
@@ -211,8 +209,7 @@ export default function Home() {
     const overallStudyTimeInHours = totalStudyTime / 3600;
     const currentLevel = Math.floor(overallStudyTimeInHours / hoursPerLevel) + 1;
     const nextLevelGoalInHours = currentLevel * hoursPerLevel;
-    console.log(currentLevel, nextLevelGoalInHours - overallStudyTimeInHours, hoursPerLevel)
-    const timeToNextLevelInSeconds = (nextLevelGoalInHours + 1 - overallStudyTimeInHours) * 3600;
+    const timeToNextLevelInSeconds = (nextLevelGoalInHours - overallStudyTimeInHours) * 3600;
 
     const progressSinceLastLevel = overallStudyTimeInHours % hoursPerLevel;
     const sessionTimeInHours = timerDurationInSeconds / 3600;
@@ -297,21 +294,21 @@ export default function Home() {
                             src={nftImageUri}
                             alt="Your minted NFT reward"
                             className="absolute inset-0 w-full h-full object-cover transition-all duration-1000"
+                            style={{ clipPath: `inset(${100 - revealPercentage}% 0 0 0)` }}
                         />
                     ) : (
-                        <>
-                            <img
-                                src="https://placehold.co/600x400/3282b8/ffffff?text=STUDY+COMPLETED"
-                                alt="Reward image"
-                                className="absolute inset-0 w-full h-full object-cover transition-all duration-1000"
-                                style={{ clipPath: `inset(${100 - revealPercentage}% 0 0 0)` }}
-                            />
-                            {revealPercentage < 100 && (
-                                <div className="absolute inset-0 bg-gray-700 flex items-center justify-center opacity-75">
-                                    <p className="text-center text-3xl text-gray-400">Progress: {Math.floor(revealPercentage)}%</p>
-                                </div>
-                            )}
-                        </>
+                        <img
+                            src="https://placehold.co/600x400/3282b8/ffffff?text=STUDY+COMPLETED"
+                            alt="Reward image"
+                            className="absolute inset-0 w-full h-full object-cover transition-all duration-1000"
+                            style={{ clipPath: `inset(${100 - revealPercentage}% 0 0 0)` }}
+                        />
+
+                    )}
+                    {revealPercentage < 100 && (
+                        <div className="absolute inset-0 bg-gray-700 flex items-center justify-center opacity-75">
+                            <p className="text-center text-3xl text-gray-400">Progress: {Math.floor(revealPercentage)}%</p>
+                        </div>
                     )}
                 </div>
             </div>
