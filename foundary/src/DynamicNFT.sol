@@ -16,9 +16,7 @@ contract StudyNFT is ERC721URIStorage, Ownable {
     uint256 private _nextTokenId;
 
     struct StudyStats {
-        uint256 totalHours;
         uint256 level;
-        uint256 lastUpdated;
         uint256 tokenid;
     }
 
@@ -53,9 +51,7 @@ contract StudyNFT is ERC721URIStorage, Ownable {
         
         // Initialize new study stats for the token.
         studyStats[to] = StudyStats({
-            totalHours: 0,
-            level: 0,
-            lastUpdated: block.timestamp,
+            level: 1,
             tokenid: newItemId
         });
         
@@ -63,24 +59,18 @@ contract StudyNFT is ERC721URIStorage, Ownable {
     }
 
     /// @notice Updates the study stats of an existing NFT.
-    function updateStudyHours(address user , uint256 hoursToAdd) external onlyOwner {
-        require(hoursToAdd > 0, "Must add positive hours.");
+    function updateStudyHours(address user , uint256 level) external onlyOwner {
+        require(level > 0, "Must add positive hours.");
         
         StudyStats storage stats = studyStats[user];
         
         // Update total hours.
-        stats.totalHours += hoursToAdd;
-
         // Calculate new level and update if it's higher than the current one.
-        uint256 newLevel = stats.totalHours / HOURS_PER_LEVEL;
+        uint256 newLevel = level;
         if (newLevel > stats.level) {
             stats.level = newLevel;
         }
 
-        // Update the timestamp.
-        stats.lastUpdated = block.timestamp;
-        
-        emit StudyMilestone(stats.totalHours, stats.level);
     }
 
     /// @dev Overrides the tokenURI function to provide dynamic metadata.
@@ -89,15 +79,25 @@ contract StudyNFT is ERC721URIStorage, Ownable {
         
         StudyStats memory stats = studyStats[ownerOf(tokenId)];
         
-        string memory json = string(abi.encodePacked(
-            '{"name": "Study NFT #', tokenId.toString(), '",',
-            '"description": "An evolving NFT representing study progress.",',
-            '"image": "https://cdna.artstation.com/p/assets/images/images/054/698/976/large/hyodoru-fedor-lesnickov-cybo.jpg?1665146929",',
-            '"attributes": [',
-                '{"trait_type": "Total Hours", "value": ', stats.totalHours.toString(), '},',
-                '{"trait_type": "Level", "value": ', stats.level.toString(), '}',
-            ']}'
-        ));
+        string memory imageLink = string(
+                abi.encodePacked(
+                    "https://gold-endless-fly-679.mypinata.cloud/ipfs/bafybeibjq6ut5gtzfvjxsrf336h3q5sjko56mzhpiloa2b7j6mufg6h2kq/level-",
+                    stats.level.toString(),
+                    ".svg"
+                )
+            );
+
+        string memory json = string(
+            abi.encodePacked(
+                '{"name": "Study NFT #', tokenId.toString(), '",',
+                '"description": "An evolving NFT representing study progress.",',
+                '"image": "', imageLink, '",',
+                '"attributes": [',
+                    '{"trait_type": "Level", "value": ', stats.level.toString(), '}',
+                ']}'
+            )
+        );
+
         
         // We'll use a placeholder image and a Base64-encoded JSON string for simplicity.
         string memory base64Json = Base64.encode(bytes(json));

@@ -9,30 +9,21 @@ export async function POST(request) {
   // We can safely remove the old signer check, as it's handled in the import file.
 
   try {
-    const { to, hours } = await request.json();
+    const { to, level } = await request.json();
 
     // Validate that the provided address and hour are in a valid format.
     if (!to || !ethers.isAddress(to)) {
       return NextResponse.json({ error: "Invalid recipient address ('to') provided." }, { status: 400 });
     }
-    if (typeof hours !== 'number' || hours <= 0) {
+    if (typeof level !== 'number' || level <= 0) {
       return NextResponse.json({ error: "Invalid study hour ('hour') provided." }, { status: 400 });
     }
 
     // Call the contract's updateStudyTime function using the backend's signer.
     console.log(`Attempting to update study time for ${to}...`);
-    const filter = contract.filters.StudyMilestone();
-
     // After sending tx
-    const tx = await contract.updateStudyHours(to, hours);
-    const receipt = await tx.wait();
-
-    // Query the block for just that event
-    const events = await contract.queryFilter(filter, receipt.blockNumber, receipt.blockNumber);
-    for (const e of events) {
-      console.log("Hours:", e.args.totalHours.toString());
-      console.log("Level:", e.args.newLevel.toString());
-    }
+    const tx = await contract.updateStudyHours(to, level);
+    await tx.wait();
 
     console.log(`Update successful! Transaction Hash: ${tx.hash}`);
     return NextResponse.json({

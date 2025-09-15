@@ -6,10 +6,10 @@ export default function Navbar({ onLogout }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     return (
-        <nav className=" bg-gray-700 ">
-            <div className='flex items-center justify-between py-6 px-8 w-[60vw] mx-auto'>
-                <div className="text-xl font-bold text-gray-400">
-                    My dApp
+        <nav className=" bg-gray-800/75 ">
+            <div className='flex items-center justify-between py-4 container mx-auto'>
+                <div className="text-2xl font-bold text-gray-300 font-mono">
+                    Dapp
                 </div>
                 {Cookies.get("userAccount") && (
                     <div className="relative">
