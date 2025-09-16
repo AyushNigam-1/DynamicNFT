@@ -1,11 +1,32 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import axios from 'axios';
-import Modal from '../components/Modal';
 
-const timerDurationInSeconds = 1 * 10; // 60 minutes
+// Modal component moved into the same file
+const Modal = ({ message, onClose }) => {
+    return (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-800 rounded-2xl p-8 max-w-sm w-full shadow-lg border border-gray-700">
+                <p className="text-center text-lg font-semibold mb-4 text-white">
+                    Notification
+                </p>
+                <p className="text-center text-gray-300 mb-6">
+                    {message}
+                </p>
+                <div className="flex justify-center">
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-2 rounded-full bg-teal-500 text-white font-semibold hover:bg-teal-600 transition-colors"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default function Home() {
     const [timerDurationInSeconds, setTimerDurationInSeconds] = useState(30 * 60); // Default to 30 minutes
@@ -15,6 +36,7 @@ export default function Home() {
     const [hoursPerLevel, setHoursPerLevel] = useState(1); // Initialize with 1 to prevent NaN
     const [showPopup, setShowPopup] = useState(false);
     const [popupMessage, setPopupMessage] = useState("");
+    const [isMinting, setIsMinting] = useState(false);
     const [totalStudyTime, setTotalStudyTime] = useState(0);
     const [nftImageUri, setNftImageUri] = useState(null);
     const [customHours, setCustomHours] = useState("");
@@ -26,13 +48,11 @@ export default function Home() {
     useEffect(() => {
         const fetchTotalStudyTime = async () => {
             const account = Cookies.get('userAccount');
-            console.log("Fetching total study time for account:", account);
             if (account) {
                 try {
                     const response = await axios.get('/api/log-study-hours/database', {
                         params: { userAddress: account }
                     });
-                    console.log("Fetched total study time:", response.data.totalStudyTime);
                     setTotalStudyTime(response.data.totalStudyTime);
                 } catch (error) {
                     console.error("Error fetching total study time:", error);
@@ -81,9 +101,11 @@ export default function Home() {
 
     // Check for a saved timer state in a cookie on initial load
     useEffect(() => {
+        const savedDuration = Number(Cookies.get('timerDuration'));
         const savedTime = Number(Cookies.get('timerSeconds'));
-        if (savedTime) {
-            setSecondsLeft(savedTime);
+        if (!isNaN(savedDuration) && savedDuration > 0) {
+            setTimerDurationInSeconds(savedDuration);
+            setSecondsLeft(isNaN(savedTime) ? savedDuration : savedTime);
         }
     }, []);
 
@@ -105,7 +127,6 @@ export default function Home() {
             const base64Data = nftUri.split(',')[1];
             const decodedJson = atob(base64Data);
             const nftMetadata = JSON.parse(decodedJson);
-            console.log("Fetched NFT metadata:", nftMetadata);
             setNftImageUri(nftMetadata.image);
         }
     }
@@ -139,30 +160,8 @@ export default function Home() {
                 // Fetch the NFT URI using the token ID
                 getNftImageUri();
 
-
-                // Optional: prompt MetaMask to track NFT
-                // if (window.ethereum) {
-                //     try {
-                //         // This is the updated call to MetaMask
-                //         await window.ethereum.request({
-                //             method: 'wallet_watchAsset',
-                //             params: {
-                //                 type: 'ERC721',
-                //                 options: {
-                //                     address: contractAddress, // The NFT contract address
-                //                     tokenId: tokenId, // The tokenId from the backend response
-                //                     symbol: "STUDY",
-                //                     decimals: 0,
-                //                 },
-                //             },
-                //         });
-                //     } catch (err) {
-                //         console.warn("User rejected asset watch request:", err);
-                //     }
-                // }
-
                 setPopupMessage(`🎉 NFT Minted! Token ID: 
-        [View Transaction](https://sepolia.etherscan.io/tx/${txHash})`);
+        [View Transaction](https://sepolia.etherscan.io/tx/placeholder-tx-hash)`);
             }
             else {
                 setPopupMessage("Session complete! Keep studying to earn your NFT reward.");
@@ -199,6 +198,7 @@ export default function Home() {
             setIsRunning(false);
             setShowPopup(false);
             Cookies.set('timerDuration', totalSeconds.toString());
+            Cookies.remove('timerSeconds');
             setShowSettingsModal(false);
         } else {
             // Optional: Provide feedback to the user if the input is invalid
@@ -232,23 +232,36 @@ export default function Home() {
     const overallStudyTimeInHours = totalStudyTime / 3600;
     const currentLevel = Math.floor(overallStudyTimeInHours / hoursPerLevel) + 1;
     const nextLevelGoalInHours = currentLevel * hoursPerLevel;
-    console.log({ overallStudyTimeInHours, currentLevel, nextLevelGoalInHours, hoursPerLevel })
     const timeToNextLevelInSeconds = (nextLevelGoalInHours - overallStudyTimeInHours) * 3600;
 
     const progressSinceLastLevel = overallStudyTimeInHours % hoursPerLevel;
-    const sessionTimeInHours = timerDurationInSeconds / 3600;
-    const newProgressPercentage = ((progressSinceLastLevel + sessionTimeInHours) / hoursPerLevel) * 100;
+
+    // The Fix: Calculate elapsed time and use it for the percentage calculation
+    const elapsedTimeInSeconds = timerDurationInSeconds - secondsLeft;
+    const elapsedTimeInHours = elapsedTimeInSeconds / 3600;
+
+    const newProgressPercentage = ((progressSinceLastLevel + elapsedTimeInHours) / hoursPerLevel) * 100;
     const revealPercentage = Math.min(Math.max(newProgressPercentage, 0), 100);
 
     return (
         <div className="flex items-center flex-col justify-center  text-white py-8 gap-8 container m-auto">
+            <style jsx>{`
+                .hide-arrows::-webkit-outer-spin-button,
+                .hide-arrows::-webkit-inner-spin-button {
+                    -webkit-appearance: none;
+                    margin: 0;
+                }
+                .hide-arrows[type="number"] {
+                    -moz-appearance: textfield;
+                }
+            `}</style>
             {showPopup && <Modal message={popupMessage} onClose={() => setShowPopup(false)} />}
             <div className='flex w-full gap-8 justify-between items-center'>
                 <div className='flex gap-2 items-center'>
                     <p className='font-mono font-bold text-gray-500 text-center text-2xl' >
                         Level:
                     </p>
-                    <p className='font-mono font-bold text-gray-400 text-center text-3xl' >
+                    <p className='font-mono font-bold text-gray-400 text-center text-2xl' >
                         {currentLevel}
                     </p>
                 </div>
@@ -318,64 +331,74 @@ export default function Home() {
                 </div>
             </div>
             {showSettingsModal && (
-                <div className="fixed inset-0 backdrop-blur-sm bg-opacity-70 flex items-center justify-center p-4 z-50">
-                    <div className="bg-gray-800 rounded-2xl p-5 max-w-xl w-full shadow-lg border border-gray-700 flex flex-col gap-12">
-                        <div>
-                            <h2 className="text-3xl font-bold text-center font-mono text-gray-300">Set Timer Duration</h2>
-                            <p className="text-center text-gray-400 font-mono">Enter your desired duration.</p>
+                <div className="fixed inset-0 backdrop-blur-sm bg-opacity-70 flex items-center justify-center p-4 z-50 transition-all duration-300">
+                    <div className="bg-gray-800 rounded-2xl p-5 max-w-xl w-full shadow-lg border border-gray-700 flex flex-col gap-16">
+                        <div className='flex justify-between'>
+                            <h2 className="text-2xl font-bold text-center font-mono text-gray-300">Timer Duration</h2>
+                            <button
+                                onClick={() => setShowSettingsModal(false)}
+                                className=" rounded-md font-semibold text-xl  text-gray-400  transition-all duration-300 transform hover:scale-105 focus:outline-none  flex gap-1 items-center cursor-pointer"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-7">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                </svg>
+
+                                {/* Cancel */}
+                            </button>
+                            {/* <p className="text-center text-gray-400 font-mono">Enter your desired duration.</p> */}
                         </div>
+                        {/* <hr /> */}
                         <div className="flex justify-center space-x-4 ">
                             <div className="flex flex-col gap-1">
-                                <label className="text-center text-gray-400 ">Hours</label>
+                                <label className=" text-gray-400 ">Hours</label>
                                 <input
-                                    type=""
+                                    type="number"
                                     placeholder="00"
                                     value={customHours}
                                     onChange={(e) => setCustomHours(e.target.value)}
-                                    className="w-40 px-4 py-2 text-center text-white rounded-md border-2 border-gray-400 "
+                                    className="hide-arrows w-40 px-4 py-2 text-center text-white rounded-xl border-2 border-gray-400 text-lg focus:outline-none "
                                 />
                             </div>
                             <div className="flex flex-col gap-1">
-                                <label className="text-center text-gray-400">Minutes</label>
+                                <label className=" text-gray-400">Minutes</label>
                                 <input
-                                    type=""
+                                    type="number"
                                     placeholder="00"
                                     value={customMinutes}
                                     onChange={(e) => setCustomMinutes(e.target.value)}
-                                    className=" w-40 px-4 py-2 text-center text-white rounded-md border-2 border-gray-400 "
+                                    className="hide-arrows w-40 px-4 py-2 text-center text-white rounded-xl border-2 border-gray-400 text-lg focus:outline-none "
                                 />
                             </div>
                             <div className="flex flex-col  gap-1">
-                                <label className="text-center text-gray-400 ">Seconds</label>
+                                <label className=" text-gray-400 ">Seconds</label>
                                 <input
-                                    type=""
+                                    type="number"
                                     placeholder="00"
                                     value={customSeconds}
                                     onChange={(e) => setCustomSeconds(e.target.value)}
-                                    className="w-40 px-4 py-2 text-center text-white rounded-md border-2 border-gray-400"
+                                    className="hide-arrows w-40 px-4 py-2 text-center text-white rounded-xl border-2 border-gray-400 text-lg focus:outline-none "
                                 />
                             </div>
                         </div>
                         <div className="flex justify-center space-x-4">
                             <button
                                 onClick={handleSetTimer}
-                                className="py-2 px-4 rounded-md font-semibold text-xl  text-gray-800 bg-gray-400 transition-all duration-300 transform hover:scale-105 focus:outline-none  flex gap-1 items-center"
+                                className="py-2 px-8 rounded-md font-mono text-xl  text-gray-800 bg-gray-400 transition-all duration-300 transform hover:scale-105 focus:outline-none  flex gap-1 items-center cursor-pointer"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                 </svg>
                                 Confirm
                             </button>
-                            <button
+                            {/* <button
                                 onClick={() => setShowSettingsModal(false)}
                                 className="py-2 px-4 rounded-md font-semibold text-xl  text-gray-800 bg-gray-400 transition-all duration-300 transform hover:scale-105 focus:outline-none  flex gap-1 items-center"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                 </svg>
-
                                 Cancel
-                            </button>
+                            </button> */}
                         </div>
                     </div>
                 </div>

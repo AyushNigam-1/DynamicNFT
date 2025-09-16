@@ -7,7 +7,7 @@ const PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf
 
 // --- Configuration ---
 console.log(PRIVATE_KEY)
-const CONTRACT_ADDRESS = "0x610178dA211FEF7D417bC0e6FeD39F05609AD788";
+const CONTRACT_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 const RPC_URL = "http://127.0.0.1:8545";
 
 // --- Load the ABI directly from the Foundry artifact ---  
