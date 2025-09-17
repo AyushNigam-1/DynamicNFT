@@ -70,3 +70,34 @@ export async function POST(request) {
         return NextResponse.json({ success: false, error: 'Failed to update study time.' }, { status: 500 });
     }
 }
+export async function DELETE(request) {
+    // Get the database instance
+    const db = await dbConnect();
+
+    try {
+        const { searchParams } = new URL(request.url);
+        const userAddress = searchParams.get('userAddress');
+
+        if (!userAddress) {
+            return NextResponse.json({ success: false, error: 'User ID is required.' }, { status: 400 });
+        }
+
+        // NeDB's update with upsert to find and set totalStudyTime to 0
+        const updatedDoc = await new Promise((resolve, reject) => {
+            db.update(
+                { userAddress },
+                { $set: { totalStudyTime: 0 } },
+                { upsert: true, returnUpdatedDocs: true },
+                (err, numAffected, newDoc) => {
+                    if (err) reject(err);
+                    resolve(newDoc);
+                }
+            );
+        });
+
+        return NextResponse.json({ success: true, totalStudyTime: updatedDoc.totalStudyTime });
+    } catch (error) {
+        console.error('DELETE request error:', error);
+        return NextResponse.json({ success: false, error: 'Failed to reset study time.' }, { status: 500 });
+    }
+}

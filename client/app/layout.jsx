@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
-import { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/app/components/Navbar";
@@ -56,17 +55,13 @@ export default function RootLayout({
     };
   }, []);
 
-  const handleLogout = () => {
-    setAccount(null);
-    Cookies.remove('userAccount');
-    router.push('/');
-  };
+
 
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased  `}>
         <div className="min-h-screen bg-gray-900/50" >
-          <Navbar account={account} onLogout={handleLogout} />
+
           {children}
         </div>
       </body>

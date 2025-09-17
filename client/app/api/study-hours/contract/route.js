@@ -22,7 +22,7 @@ export async function POST(request) {
     // Call the contract's updateStudyTime function using the backend's signer.
     console.log(`Attempting to update study time for ${to}...`);
     // After sending tx
-    const tx = await contract.updateStudyHours(to, level);
+    const tx = await contract.setStudyLevel(to, level);
     await tx.wait();
 
     console.log(`Update successful! Transaction Hash: ${tx.hash}`);
@@ -40,5 +40,41 @@ export async function POST(request) {
 
     // Return a more generic error to the user
     return NextResponse.json({ error: "Failed to update study time on the blockchain." }, { status: 500 });
+  }
+}
+export async function GET(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const userAddress = searchParams.get('userAddress');
+
+    // Validate that the provided address is a valid Ethereum address.
+    if (!userAddress || !ethers.isAddress(userAddress)) {
+      return NextResponse.json({ error: "Invalid user address provided." }, { status: 400 });
+    }
+
+    console.log(`Attempting to get level for address: ${userAddress}`);
+
+    // Call the contract's getStudyLevel function to retrieve the level for the address.
+    // This assumes the contract has a public view function that returns the level.
+    const level = await contract.getStudyLevel(userAddress);
+
+    // The contract function will likely return a BigInt or similar type. Convert it to a number.
+    const userLevel = Number(level);
+
+    console.log(`Successfully retrieved level: ${userLevel} for address: ${userAddress}`);
+
+    return NextResponse.json({
+      success: true,
+      level: userLevel,
+      message: `Retrieved study level for address ${userAddress}.`
+    });
+
+  } catch (error) {
+    console.error("Failed to get study level:", error);
+    // Log the full error to the console for debugging.
+    console.error("Full error object:", error);
+
+    // Return a more generic error to the user.
+    return NextResponse.json({ error: "Failed to retrieve study level from the blockchain." }, { status: 500 });
   }
 }

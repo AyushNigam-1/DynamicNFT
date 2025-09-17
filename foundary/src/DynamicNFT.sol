@@ -59,20 +59,18 @@ contract StudyNFT is ERC721URIStorage, Ownable {
     }
 
     /// @notice Updates the study stats of an existing NFT.
-    function updateStudyHours(address user , uint256 level) external onlyOwner {
-        require(level > 0, "Must add positive hours.");
+    function setStudyLevel(address user , uint256 newLevel) external onlyOwner {
+        require(studyStats[user].tokenid > 0, "User does not have an NFT yet.");
         
         StudyStats storage stats = studyStats[user];
         
-        // Update total hours.
-        // Calculate new level and update if it's higher than the current one.
-        uint256 newLevel = level;
-        if (newLevel > stats.level) {
-            stats.level = newLevel;
-        }
+        stats.level = newLevel;
 
     }
-
+    function getStudyLevel(address user) public view returns (uint256) {
+        require(studyStats[user].tokenid > 0, "User does not have an NFT yet.");
+        return studyStats[user].level;
+    }
     /// @dev Overrides the tokenURI function to provide dynamic metadata.
     function tokenURI(uint256 tokenId) public view virtual override returns (string memory) {
         require(ownerOf(tokenId) != address(0), "ERC721: URI query for nonexistent token");

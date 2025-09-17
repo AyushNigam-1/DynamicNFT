@@ -1,4 +1,3 @@
-// app/api/contract/route.js
 import { NextResponse } from 'next/server';
 import { contract } from '../../lib/contract';
 
