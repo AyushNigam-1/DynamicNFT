@@ -83,17 +83,17 @@ export default function MetaMaskConnection() {
 
   const truncateAddress = (address) => {
     if (!address) return '';
-    const start = address.substring(0, 6);
-    const end = address.substring(address.length - 4);
+    const start = address.substring(0, 8);
+    const end = address.substring(address.length - 8);
     return `${start}...${end}`;
   };
 
   return (
     <>
-      <Navbar />
-      <div className="flex flex-col items-center justify-center min-h-screen  text-white p-4">
-        <div className="w-full max-w-sm p-8 space-y-8 bg-gray-700 rounded-2xl shadow-2xl border border-gray-600">
-          <h1 className="text-4xl font-extrabold text-center text-teal-400">
+      {/* <Navbar /> */}
+      <div className="flex flex-col items-center justify-center min-h-screen  text-white p-4 font-mono">
+        <div className="w-full max-w-sm p-8 space-y-4 bg-gray-700 rounded-2xl shadow-2xl border border-gray-600">
+          <h1 className="text-4xl font-extrabold text-center text-gray-200">
             Connect Wallet
           </h1>
 
@@ -105,7 +105,7 @@ export default function MetaMaskConnection() {
               <button
                 onClick={connectWallet}
                 disabled={isConnecting || isProcessing}
-                className={`px-6 py-3 font-semibold text-lg text-gray-800 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal-400 ${isConnecting || isProcessing ? 'bg-gray-500 cursor-not-allowed' : 'bg-teal-400 hover:bg-teal-500'
+                className={`px-6 py-3 cursor-pointer font-semibold text-lg text-gray-800 rounded-xl w-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal-400 ${isConnecting || isProcessing ? 'bg-gray-500 cursor-not-allowed' : 'bg-gray-400 hover:bg-gray-500 hover:text-gray-900'
                   }`}
               >
                 {isConnecting ? 'Connecting...' : isProcessing ? 'Please wait...' : 'Connect to MetaMask'}
@@ -117,9 +117,9 @@ export default function MetaMaskConnection() {
               )}
             </div>
           ) : (
-            <div className="text-center">
+            <div className="text-center flex flex-col items-center space-y-4">
               <p className="text-gray-400">Wallet Connected!</p>
-              <p className="text-xl font-mono text-teal-400 break-all">
+              <p className="text-xl font-mono text-gray-400 break-all">
                 {truncateAddress(account)}
               </p>
             </div>

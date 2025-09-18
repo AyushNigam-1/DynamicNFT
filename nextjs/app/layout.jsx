@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/app/components/Navbar";
 import { useRouter } from "next/navigation";
 const geistSans = Geist({
   variable: "--font-geist-sans",

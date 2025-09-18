@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '../../lib/dbConnect';
+import database from '../../lib/database';
 // GET request to retrieve a token ID for a given user address.
 export async function GET(request) {
     try {
@@ -10,7 +10,7 @@ export async function GET(request) {
             return NextResponse.json({ error: 'Missing userAddress in query parameters' }, { status: 400 });
         }
 
-        const db = await dbConnect();
+        const db = await database();
 
         return new Promise((resolve) => {
             db.findOne({ userAddress }, (err, doc) => {
@@ -39,7 +39,7 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Missing userAddress or tokenId in request body' }, { status: 400 });
         }
 
-        const db = await dbConnect();
+        const db = await database();
 
         return new Promise((resolve) => {
             // Find if a document with the userAddress already exists.

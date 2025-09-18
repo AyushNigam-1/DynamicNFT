@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import Cookies from 'js-cookie';
 import axios from 'axios'
-import Modal from '../components/Modal';
+import Notification from '../components/Notification';
 import Navbar from '../components/Navbar';
+import { Settings } from '../components/Settings';
 
 export default function Home() {
     const [timerDurationInSeconds, setTimerDurationInSeconds] = useState(30 * 60); // Default to 30 minutes
@@ -22,6 +23,26 @@ export default function Home() {
     const [customSeconds, setCustomSeconds] = useState("");
     const [showSettingsModal, setShowSettingsModal] = useState(false);
     const [userLevelFromContract, setUserLevelFromContract] = useState(0); // State for the user's level from the contract
+    const [theme, setTheme] = useState('system');
+
+    // Handle theme changes and persistence
+    useEffect(() => {
+        const savedTheme = localStorage.getItem('theme') || 'system';
+        setTheme(savedTheme);
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem('theme', theme);
+        const root = document.documentElement;
+        root.classList.remove('light', 'dark');
+
+        if (theme === 'system') {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            root.classList.add(prefersDark ? 'dark' : 'light');
+        } else {
+            root.classList.add(theme);
+        }
+    }, [theme]);
 
     // Fetch total study time when the component loads or a session is completed
     useEffect(() => {
@@ -29,7 +50,7 @@ export default function Home() {
             const account = Cookies.get('userAccount');
             if (account) {
                 try {
-                    const response = await axios.get('/api/study-hours/database', {
+                    const response = await axios.get('/api/study-hours', {
                         params: { userAddress: account }
                     });
                     setTotalStudyTime(response.data.totalStudyTime);
@@ -45,7 +66,7 @@ export default function Home() {
             const account = Cookies.get('userAccount');
             if (account) {
                 try {
-                    const response = await axios.get('/api/study-hours/contract', {
+                    const response = await axios.get('/api/level', {
                         params: { userAddress: account }
                     });
                     setUserLevelFromContract(response.data.level);
@@ -133,7 +154,7 @@ export default function Home() {
             const oldTotalTime = totalStudyTime;
 
             // Save the newly completed study time to the database
-            const saveTimeResponse = await axios.post('/api/study-hours/database', {
+            const saveTimeResponse = await axios.post('/api/study-hours', {
                 userAddress: account,
                 timeInSeconds: timerDurationInSeconds
             });
@@ -145,18 +166,15 @@ export default function Home() {
 
             const oldLevel = Math.floor(oldTotalTime / 3600 / hoursPerLevel) + 1;
             const newLevel = Math.floor(updatedTotalTime / 3600 / hoursPerLevel) + 1;
-            // Check if total study time has crossed the threshold for minting
-            console.log(oldLevel, newLevel)
+
             if (newLevel > oldLevel) {
                 setIsMinting(true);
-                setPopupMessage("Session complete! Minting your NFT reward...");
+                setPopupMessage("Level");
                 setShowPopup(true);
 
-                // Call the minting API
-                // console.log(level)
-                await axios.post('/api/study-hours/contract', { to: account, level: newLevel })
+                await axios.post('/api/level', { to: account, level: newLevel })
                 try {
-                    axios.delete(`/api/study-hours/database?userAddress=${account}`)
+                    axios.delete(`/api/study-hours?userAddress=${account}`)
                     setTotalStudyTime(0); // Update local state immediately
                     console.log("Total study time reset to 0 in database.");
                 } catch (resetError) {
@@ -164,12 +182,9 @@ export default function Home() {
                 }
                 // Fetch the NFT URI using the token ID
                 getNftImageUri();
-
-                setPopupMessage(`🎉 NFT Minted! Token ID: 
-        [View Transaction](https://sepolia.etherscan.io/tx/placeholder-tx-hash)`);
             }
             else {
-                setPopupMessage("Session complete! Keep studying to earn your NFT reward.");
+                setPopupMessage("Session");
                 setShowPopup(true);
             }
         } catch (error) {
@@ -252,18 +267,7 @@ export default function Home() {
         <>
             <Navbar />
             <div className="flex items-center flex-col justify-center px-56 text-white py-8 gap-8 container m-auto">
-
-                <style jsx>{`
-                .hide-arrows::-webkit-outer-spin-button,
-                .hide-arrows::-webkit-inner-spin-button {
-                    -webkit-appearance: none;
-                    margin: 0;
-                }
-                .hide-arrows[type="number"] {
-                    -moz-appearance: textfield;
-                }
-            `}</style>
-                {showPopup && <Modal message={popupMessage} onClose={() => setShowPopup(false)} />}
+                {showPopup && <Notification nftImageUri={nftImageUri} message={popupMessage} onClose={() => setShowPopup(false)} />}
                 <div className='flex w-full gap-8 justify-between items-center'>
                     <div className='flex gap-2 items-center'>
                         <p className='font-mono font-bold text-gray-500 text-center text-2xl' >
@@ -338,79 +342,7 @@ export default function Home() {
                         </button>
                     </div>
                 </div>
-                {showSettingsModal && (
-                    <div className="fixed inset-0 backdrop-blur-sm bg-opacity-70 flex items-center justify-center p-4 z-50 transition-all duration-300">
-                        <div className="bg-gray-800 rounded-2xl p-5 max-w-xl w-full shadow-lg border border-gray-700 flex flex-col gap-16">
-                            <div className='flex justify-between'>
-                                <h2 className="text-2xl font-bold text-center font-mono text-gray-300">Timer Duration</h2>
-                                <button
-                                    onClick={() => setShowSettingsModal(false)}
-                                    className=" rounded-md font-semibold text-xl  text-gray-400  transition-all duration-300 transform hover:scale-105 focus:outline-none  flex gap-1 items-center cursor-pointer"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-7">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                                    </svg>
-
-                                    {/* Cancel */}
-                                </button>
-                                {/* <p className="text-center text-gray-400 font-mono">Enter your desired duration.</p> */}
-                            </div>
-                            {/* <hr /> */}
-                            <div className="flex justify-center space-x-4 ">
-                                <div className="flex flex-col gap-1">
-                                    <label className=" text-gray-400 ">Hours</label>
-                                    <input
-                                        type="number"
-                                        placeholder="00"
-                                        value={customHours}
-                                        onChange={(e) => setCustomHours(e.target.value)}
-                                        className="hide-arrows w-40 px-4 py-2 text-center text-white rounded-xl border-2 border-gray-400 text-lg focus:outline-none "
-                                    />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <label className=" text-gray-400">Minutes</label>
-                                    <input
-                                        type="number"
-                                        placeholder="00"
-                                        value={customMinutes}
-                                        onChange={(e) => setCustomMinutes(e.target.value)}
-                                        className="hide-arrows w-40 px-4 py-2 text-center text-white rounded-xl border-2 border-gray-400 text-lg focus:outline-none "
-                                    />
-                                </div>
-                                <div className="flex flex-col  gap-1">
-                                    <label className=" text-gray-400 ">Seconds</label>
-                                    <input
-                                        type="number"
-                                        placeholder="00"
-                                        value={customSeconds}
-                                        onChange={(e) => setCustomSeconds(e.target.value)}
-                                        className="hide-arrows w-40 px-4 py-2 text-center text-white rounded-xl border-2 border-gray-400 text-lg focus:outline-none "
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex justify-center space-x-4">
-                                <button
-                                    onClick={handleSetTimer}
-                                    className="py-2 px-8 rounded-md font-mono text-xl  text-gray-800 bg-gray-400 transition-all duration-300 transform hover:scale-105 focus:outline-none  flex gap-1 items-center cursor-pointer"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                    </svg>
-                                    Confirm
-                                </button>
-                                {/* <button
-                                onClick={() => setShowSettingsModal(false)}
-                                className="py-2 px-4 rounded-md font-semibold text-xl  text-gray-800 bg-gray-400 transition-all duration-300 transform hover:scale-105 focus:outline-none  flex gap-1 items-center"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                </svg>
-                                Cancel
-                            </button> */}
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {showSettingsModal && <Settings setShowSettingsModal={setShowSettingsModal} setTheme={setTheme} setCustomHours={setCustomHours} setCustomMinutes={setCustomMinutes} setCustomSeconds={setCustomSeconds} theme={theme} handleSetTimer={handleSetTimer} customMinutes={customMinutes} customSeconds={customSeconds} customHours={customHours} />}
 
                 <p className='text-center font-mono font-bold text-gray-500 text-2xl ' >
                     Your Reward
@@ -435,10 +367,10 @@ export default function Home() {
                         {revealPercentage < 100 && (
                             <div className="absolute inset-0 bg-gray-800/75 flex items-center justify-center opacity-75">
                                 <div className='flex  items-center gap-2'>
-                                    <p className='font-mono font-bold text-gray-300 text-center text-lg' >
+                                    {/* <p className='font-mono font-bold text-gray-300 text-center text-lg' >
                                         Progress :
-                                    </p>
-                                    <p className='font-mono font-bold text-gray-200 text-center text-xl' >
+                                    </p> */}
+                                    <p className='font-mono font-bold text-gray-200 text-center text-2xl' >
                                         {revealPercentage.toFixed(1)}%
                                     </p>
                                 </div>

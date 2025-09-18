@@ -9,8 +9,8 @@ if (!cachedDb) {
 }
 
 // The function now returns the cached database instance directly
-async function dbConnect() {
+async function database() {
   return cachedDb;
 }
 
-export default dbConnect;
+export default database;

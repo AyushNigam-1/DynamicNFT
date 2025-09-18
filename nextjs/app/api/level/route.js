@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 
 // Import the pre-initialized contract instance from your external file.
-import { contract } from '../../../lib/contract';
+import { contract } from '../../lib/contract';
 
 export async function POST(request) {
   // The 'contract' object is now imported and correctly initialized.

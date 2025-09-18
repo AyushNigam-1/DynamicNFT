@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '../../lib/dbConnect';
-
+import database from '../../lib/database';
 /**
  * Handles GET requests to fetch user data for a specific user ID.
  * The userId is extracted from the URL path.
@@ -9,7 +8,7 @@ export async function GET(request) {
     try {
         const { searchParams } = new URL(request.url);
         const userAddress = searchParams.get('userAddress');
-        const db = await dbConnect();
+        const db = await database();
 
         if (!userAddress) {
             return NextResponse.json({ error: "User ID is required." }, { status: 400 });

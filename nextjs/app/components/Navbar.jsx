@@ -2,8 +2,22 @@
 
 import { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
 export default function Navbar() {
+    const router = useRouter();
     const [account, setAccount] = useState();
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    useEffect(() => {
+        // This effect controls the menu's open animation
+        if (isMenuOpen) {
+            const timer = setTimeout(() => setIsAnimating(true), 10);
+            return () => clearTimeout(timer);
+        } else {
+            setIsAnimating(false);
+        }
+    }, [isMenuOpen]);
     useEffect(() => {
         // Check for cookie on initial load
         const savedAccount = Cookies.get('userAccount');
@@ -12,13 +26,20 @@ export default function Navbar() {
         }
     }, [])
 
-    // MetaMask event listener
     const handleLogout = () => {
-        setAccount(null);
-        Cookies.remove('userAccount');
-        router.push('/');
+        setIsAnimating(false);
+        setTimeout(() => {
+            onLogout();
+            setIsMenuOpen(false);
+        }, 300); // Wait for the transition to finish
     };
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const handleCloseMenu = () => {
+        setIsAnimating(false);
+        setTimeout(() => {
+            setIsMenuOpen(false);
+        }, 300); // Wait for the transition to finish
+    };
     return (
         <nav className="bg-gray-800/75 ">
             <div className='flex items-center justify-between py-4 container mx-auto px-56'>
@@ -36,8 +57,13 @@ export default function Navbar() {
                             </svg>
                         </button>
                         {isMenuOpen && (
-                            <div className="absolute right-0 m-4 mr-0 w-48 p-2 bg-gray-700 flex flex-col gap-2 rounded-md shadow-lg z-10 ">
-                                <p className="block p-2 text-xl truncate text-gray-400 border-b border-gray-600">
+                            <div className="fixed inset-0 z-0" onClick={handleCloseMenu}></div>
+                        )}
+                        {isMenuOpen && (
+                            <div className={`absolute right-0 mt-4 mr-0 w-48 p-2 bg-gray-700 flex flex-col gap-2 rounded-md shadow-lg z-10 transition-all duration-300 transform origin-top-right
+                                ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
+                            >
+                                <p className="block p-2 text-xl truncate text-gray-400 border-b-2 border-gray-600">
                                     {account}
                                 </p>
                                 <button

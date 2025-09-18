@@ -1,4 +1,4 @@
-import dbConnect from '../../../lib/dbConnect';
+import database from '../../lib/database';
 import { NextResponse } from 'next/server';
 
 /**
@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
  */
 export async function GET(request) {
     // Get the database instance
-    const db = await dbConnect();
+    const db = await database();
 
     try {
         const { searchParams } = new URL(request.url);
@@ -31,6 +31,7 @@ export async function GET(request) {
 
         return NextResponse.json({ success: true, totalStudyTime: studyTime.totalStudyTime });
     } catch (error) {
+        console.log('Fetched study time:', studyTime);
         console.error('GET request error:', error);
         return NextResponse.json({ success: false, error: 'Failed to retrieve study time.' }, { status: 500 });
     }
@@ -42,7 +43,7 @@ export async function GET(request) {
  */
 export async function POST(request) {
     // Get the database instance
-    const db = await dbConnect();
+    const db = await database();
 
     try {
         const { userAddress, timeInSeconds } = await request.json();
@@ -72,7 +73,7 @@ export async function POST(request) {
 }
 export async function DELETE(request) {
     // Get the database instance
-    const db = await dbConnect();
+    const db = await database();
 
     try {
         const { searchParams } = new URL(request.url);
