@@ -4,7 +4,7 @@ import { contract } from '../../lib/contract';
 // GET request to retrieve the HOURS_PER_LEVEL from the contract.
 export async function GET() {
     try {
-        const hoursPerLevel = await contract.HOURS_PER_LEVEL();
+        const hoursPerLevel = await contract.hoursPerLevel();
         console.log("HOURS_PER_LEVEL:", hoursPerLevel.toString());
 
         return NextResponse.json({ hoursPerLevel: hoursPerLevel.toString() });

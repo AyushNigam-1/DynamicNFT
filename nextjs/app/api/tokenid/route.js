@@ -51,7 +51,7 @@ export async function POST(request) {
 
                 if (doc) {
                     // If the user exists, update their token ID.
-                    db.update({ userAddress }, { $set: { tokenId } }, {}, (updateErr, numReplaced) => {
+                    db.update({ userAddress }, { $set: { tokenId, timeDuration: 50 * 60 } }, { upsert: true }, (updateErr, numReplaced) => {
                         if (updateErr) {
                             console.error('Database update error:', updateErr);
                             return resolve(NextResponse.json({ error: 'Failed to update token ID' }, { status: 500 }));
@@ -60,7 +60,7 @@ export async function POST(request) {
                     });
                 } else {
                     // If the user doesn't exist, insert a new document.
-                    db.insert({ userAddress, tokenId }, (insertErr, newDoc) => {
+                    db.insert({ userAddress, tokenId, timeDuration: 50 * 60 }, (insertErr, newDoc) => {
                         if (insertErr) {
                             console.error('Database insert error:', insertErr);
                             return resolve(NextResponse.json({ error: 'Failed to insert new user document' }, { status: 500 }));

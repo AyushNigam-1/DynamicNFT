@@ -48,6 +48,7 @@ export default function MetaMaskConnection() {
         const checkResponse = await axios.get(`/api/user/?userAddress=${connectedAccount}`);
 
         if (!checkResponse.data.success) {
+
           // If the user does not exist, mint an NFT and create a new user record
           setStatusMessage("New user detected. Minting your first NFT and registering you...");
           const mintResponse = await axios.post('/api/nft', { to: connectedAccount });
@@ -56,10 +57,11 @@ export default function MetaMaskConnection() {
             setStatusMessage(`Minting complete! Your token ID is ${mintResponse.data.tokenId}.`);
             // Save the account and redirect
             await axios.post('/api/tokenid', { userAddress: connectedAccount, tokenId: mintResponse.data.tokenId });
-
+            // console.log()
             Cookies.set('userAccount', connectedAccount, { expires: 7 });
             router.push('/timer');
-          } else {
+          }
+          else {
             setError(`Failed to mint NFT: ${mintResponse.data.error}`);
             setIsProcessing(false);
           }

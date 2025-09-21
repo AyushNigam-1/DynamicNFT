@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { useRouter } from "next/navigation";
+import { WalletProvider } from "./context/WalletContext";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -60,8 +61,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased  `}>
         <div className="min-h-screen bg-gray-900/50" >
-
-          {children}
+          <WalletProvider>
+            {children}
+          </WalletProvider>
         </div>
       </body>
     </html>

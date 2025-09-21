@@ -29,8 +29,10 @@ export default function Navbar() {
     const handleLogout = () => {
         setIsAnimating(false);
         setTimeout(() => {
-            onLogout();
+            Cookies.remove('userAccount');
             setIsMenuOpen(false);
+            setAccount(null);
+            router.push('/');
         }, 300); // Wait for the transition to finish
     };
 
