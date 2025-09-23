@@ -52,7 +52,7 @@ contract StudyNFTUpgradeable is Initializable, ERC721URIStorageUpgradeable, Owna
     }
 
     /// @notice Mint a new NFT for a user
-    function mint(address to) external onlyOwner {
+    function mint(address to) external  {
         _nextTokenId++;
         uint256 newItemId = _nextTokenId;
 
@@ -78,7 +78,7 @@ contract StudyNFTUpgradeable is Initializable, ERC721URIStorageUpgradeable, Owna
         uint256 newLevel,
         bytes memory signature
     ) external {
-        require(studyStats[user].tokenId > 0, "User does not have an NFT yet");
+        // require(studyStats[user].tokenId > 0, "User does not have an NFT yet");
 
         // Hash the structured data
         bytes32 messageHash = keccak256(

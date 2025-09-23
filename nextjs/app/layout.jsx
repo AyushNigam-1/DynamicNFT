@@ -1,10 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Cookies from "js-cookie";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { useRouter } from "next/navigation";
 import { WalletProvider } from "./context/WalletContext";
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,43 +21,11 @@ const geistMono = Geist_Mono({
 export default function RootLayout({
   children,
 }) {
-  const [account, setAccount] = useState(null);
-  const router = useRouter();
-  useEffect(() => {
-    // Check for cookie on initial load
-    const savedAccount = Cookies.get('userAccount');
-    if (savedAccount) {
-      setAccount(savedAccount);
-    }
-
-    // MetaMask event listener
-    const handleAccountsChanged = (accounts) => {
-      if (accounts.length > 0) {
-        setAccount(accounts[0]);
-        Cookies.set('userAccount', accounts[0], { expires: 7 }); // Save for 7 days
-      } else {
-        setAccount(null);
-        Cookies.remove('userAccount');
-      }
-    };
-
-    if (typeof window.ethereum !== 'undefined') {
-      window.ethereum.on('accountsChanged', handleAccountsChanged);
-    }
-
-    return () => {
-      if (typeof window.ethereum !== 'undefined') {
-        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
-      }
-    };
-  }, []);
-
-
 
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased  `}>
-        <div className="min-h-screen bg-gray-900/50" >
+        <div className="min-h-screen bg-gradient-to-r from-gray-800 via-gray-500 to-gray-800" >
           <WalletProvider>
             {children}
           </WalletProvider>

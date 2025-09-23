@@ -6,8 +6,13 @@ import axios from 'axios'
 import Notification from '../components/Notification';
 import Navbar from '../components/Navbar';
 import { Settings } from '../components/Settings';
-import { contract } from '../lib/contract';
+import { getLevel, setLevel } from '../services/level';
+import { useWallet } from '../context/WalletContext';
+import { getNftUri } from '../services/nft';
+import { getHoursPerLevel } from '../services/hour_per_level';
 export default function Home() {
+    const { Wallet, account } = useWallet();
+
     const [timerDurationInSeconds, setTimerDurationInSeconds] = useState(30 * 60); // Default to 30 minutes
     const [secondsLeft, setSecondsLeft] = useState(timerDurationInSeconds);
     const [isRunning, setIsRunning] = useState(false);
@@ -25,33 +30,8 @@ export default function Home() {
     const [userLevelFromContract, setUserLevelFromContract] = useState(0); // State for the user's level from the contract
     const [theme, setTheme] = useState('system');
     const [timeDuration, setTimeDuration] = useState(0);
+    const [contract, setContract] = useState(null);
     // Handle theme changes and persistence
-    useEffect(() => {
-        const savedTheme = localStorage.getItem('theme') || 'system';
-        setTheme(savedTheme);
-    }, []);
-    useEffect(() => {
-        const account = Cookies.get('userAccount');
-        if (!account) return;
-        const fetchTimeDuration = async () => {
-            // setLoading(true);
-            // setError("");
-            try {
-                const res = await axios.get("/api/duration", {
-                    params: { userAddress: account }
-                });
-                console.log("User level from contract:", res.data.timeDuration);
-                setTimeDuration(res.data.timeDuration || 0)
-                setSecondsLeft(res.data.timeDuration || 0);
-            } catch (err) {
-                console.error(err);
-                // setError(err.response?.data?.error || "Failed to fetch timeDuration");
-            } finally {
-                // setLoading(false);
-            }
-        };
-        fetchTimeDuration();
-    }, []);
     useEffect(() => {
         localStorage.setItem('theme', theme);
         const root = document.documentElement;
@@ -64,6 +44,43 @@ export default function Home() {
             root.classList.add(theme);
         }
     }, [theme]);
+
+    useEffect(() => {
+        const savedTheme = localStorage.getItem('theme') || 'system';
+        setTheme(savedTheme);
+
+    }, []);
+
+    useEffect(() => {
+        const getContract = async () => {
+            const { contract } = await Wallet();
+            setContract(contract);
+        }
+        getContract()
+    }, [])
+
+    useEffect(() => {
+        const account = Cookies.get('userAccount');
+        if (!account) return;
+        const fetchTimeDuration = async () => {
+
+            try {
+                const res = await axios.get("/api/duration", {
+                    params: { userAddress: account }
+                });
+                console.log("User duration:", res.data.timeDuration);
+                setTimeDuration(res.data.timeDuration || 0)
+                setSecondsLeft(res.data.timeDuration || 0);
+            } catch (err) {
+                console.error(err);
+                // setError(err.response?.data?.error || "Failed to fetch timeDuration");
+            } finally {
+                // setLoading(false);
+            }
+        };
+        fetchTimeDuration();
+    }, []);
+
 
     // Fetch total study time when the component loads or a session is completed
     useEffect(() => {
@@ -85,12 +102,10 @@ export default function Home() {
     useEffect(() => {
         const fetchUserLevel = async () => {
             const account = Cookies.get('userAccount');
-            if (account) {
+            if (account && contract) {
                 try {
-                    const response = await axios.get('/api/level', {
-                        params: { userAddress: account }
-                    });
-                    setUserLevelFromContract(response.data.level);
+                    const response = await getLevel(account, contract);
+                    setUserLevelFromContract(response.level);
                 } catch (error) {
                     console.error("Error fetching user level from contract:", error);
                     // Handle cases where the user may not have an NFT yet
@@ -99,22 +114,38 @@ export default function Home() {
             }
         };
         fetchUserLevel();
-    }, [isDone, totalStudyTime]);
+    }, [isDone, totalStudyTime, contract]);
     // Fetch HOURS_PER_LEVEL from the backend
     useEffect(() => {
         const fetchHoursPerLevel = async () => {
-            try {
-                const response = await axios.get('/api/hours-per-level');
-                // Ensure value is a number and not 0 to prevent division issues
-                const hours = Number(response.data.hoursPerLevel);
-                setHoursPerLevel(hours > 0 ? hours : 1);
-            } catch (error) {
-                console.error("Error fetching HOURS_PER_LEVEL:", error);
+            if (account && contract) {
+                try {
+                    const response = await getHoursPerLevel(contract)
+                    // Ensure value is a number and not 0 to prevent division issues
+                    const hours = Number(response.hours);
+                    console.log("hours", hours)
+                    setHoursPerLevel(hours > 0 ? hours : 1);
+                } catch (error) {
+                    console.error("Error fetching HOURS_PER_LEVEL:", error);
+                }
             }
         };
         fetchHoursPerLevel();
-    }, []);
+    }, [contract]);
 
+    const getNftImageUri = async () => {
+        console.log(Cookies.get('userAccount'))
+        const { data } = await axios.get('/api/tokenid', { params: { userAddress: Cookies.get('userAccount') } });
+
+        const nftUriResponse = await getNftUri(data.tokenId, contract);
+        const nftUri = nftUriResponse.tokenURI;
+        if (nftUri) {
+            const base64Data = nftUri.split(',')[1];
+            const decodedJson = atob(base64Data);
+            const nftMetadata = JSON.parse(decodedJson);
+            setNftImageUri(nftMetadata.image);
+        }
+    }
     // Timer logic
     useEffect(() => {
         let timer;
@@ -154,29 +185,19 @@ export default function Home() {
         }
     }, [secondsLeft, isRunning]);
     useEffect(() => {
-        getNftImageUri();
-    }, [])
-
-
-
-    const getNftImageUri = async () => {
-        console.log(Cookies.get('userAccount'))
-        const { data } = await axios.get('/api/tokenid', { params: { userAddress: Cookies.get('userAccount') } });
-        const nftUriResponse = await axios.get('/api/nft', { params: { tokenId: data.tokenId } });
-        const nftUri = nftUriResponse.data.tokenURI;
-        if (nftUri) {
-            const base64Data = nftUri.split(',')[1];
-            const decodedJson = atob(base64Data);
-            const nftMetadata = JSON.parse(decodedJson);
-            setNftImageUri(nftMetadata.image);
+        if (contract) {
+            getNftImageUri();
         }
-    }
+    }, [contract])
+
+
+
+
 
     const handleSessionComplete = async () => {
         const account = Cookies.get('userAccount');
         try {
             const oldTotalTime = totalStudyTime;
-
             // Save the newly completed study time to the database
             const saveTimeResponse = await axios.post('/api/study-hours', {
                 userAddress: account,
@@ -204,14 +225,15 @@ export default function Home() {
                     console.log("Backend signed data:", { totalTime, levelFromBackend, signature });
 
                     // 2. Call the contract with signed data
-                    const tx = await contract.logStudySigned(
+                    const tx = await setLevel(
+                        contract,
                         account,
-                        totalHours,
+                        totalTime,
                         levelFromBackend,
                         signature
                     );
-                    await tx.wait();
-                    console.log("Contract call successful:", tx.hash);
+                    // await tx.wait();
+                    console.log("Contract call successful:", tx.newLevel);
 
                     // 3. Reset total study time in your database
                     // try {
@@ -327,7 +349,7 @@ export default function Home() {
     return (
         <>
             <Navbar />
-            <div className="flex items-center flex-col justify-center px-56 text-white py-8 gap-8 container m-auto">
+            <div className="flex items-center flex-col justify-center px-56 text-white py-8 gap-8  m-auto ">
                 {showPopup && <Notification nftImageUri={nftImageUri} message={popupMessage} onClose={() => setShowPopup(false)} />}
                 <div className='flex w-full gap-8 justify-between items-center'>
                     <div className='flex gap-2 items-center'>
@@ -408,14 +430,28 @@ export default function Home() {
                 <p className='text-center font-mono font-bold text-gray-500 text-2xl ' >
                     Your Reward
                 </p>
-                <div className="space-y-4 w-full">
-                    <div className="relative h-80 w-80 bg-gray-800/75 rounded-xl overflow-hidden  mx-auto">
+                <div className="grid grid-cols-16 w-full">
+                    <div className='h-50 col-span-2 bg-gray-800/75 text-gray-300 rounded-xl my-auto relative' >
+                        <img src={`https://gold-endless-fly-679.mypinata.cloud/ipfs/bafybeihjewyl2sgnf57zsuov3vt7zl7anrtu2jikhavulcczajk4hi7s64/level-${userLevelFromContract - 1}.svg`} alt="" className='absolute brightness-50 w-full h-full blur-xl' />
+                        <div className='flex justify-center items-center flex-col absolute h-full w-full'>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-14">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                            </svg>
+
+
+                            <p className='font-semibold' >Level {userLevelFromContract - 1}</p>
+                        </div>
+                    </div>
+                    <div className='h-2 col-span-4 w-full bg-gray-800/75 my-auto' >
+                        <div className={`h-full bg-gray-400 w-[${revealPercentage}%] `}></div>
+                    </div>
+                    <div className="relative h-80 col-span-4 bg-gray-800/75 rounded-xl overflow-hidden ">
                         {nftImageUri ? (
                             <img
                                 src={nftImageUri}
                                 alt="Your minted NFT reward"
-                                className="absolute inset-0 w-80 h-80 object-cover transition-all duration-1000 "
-                                style={{ clipPath: `inset(${100 - revealPercentage}% 0 0 0)` }}
+                                className="absolute inset-0 w-80 h-80 object-cover transition-all duration-1000 blur-xl"
+                            // style={{ clipPath: `inset(${100 - revealPercentage}% 0 0 0)` }}
                             />
                         ) : (
                             <img
@@ -426,17 +462,37 @@ export default function Home() {
                             />
                         )}
                         {revealPercentage < 100 && (
-                            <div className="absolute inset-0 bg-gray-800/75 flex items-center justify-center opacity-75">
-                                <div className='flex  items-center gap-2'>
+                            <div className="absolute inset-0 bg-gray-800/75 flex items-center justify-center opacity-75 ">
+                                <div className='flex  items-center gap-2 flex-col justify-center'>
                                     {/* <p className='font-mono font-bold text-gray-300 text-center text-lg' >
                                         Progress :
                                     </p> */}
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-14">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    </svg>
+
                                     <p className='font-mono font-bold text-gray-200 text-center text-2xl' >
                                         {revealPercentage.toFixed(1)}%
                                     </p>
+                                    <p className='font-semibold' >Level {userLevelFromContract}</p>
+
                                 </div>
                             </div>
                         )}
+                    </div>
+                    <div className='h-2 col-span-4 bg-gray-800/75 my-auto' >
+
+                    </div>
+                    <div className='h-50 col-span-2 bg-gray-800/75 text-gray-300 rounded-xl my-auto relative' >
+                        <img src={`https://gold-endless-fly-679.mypinata.cloud/ipfs/bafybeihjewyl2sgnf57zsuov3vt7zl7anrtu2jikhavulcczajk4hi7s64/level-${userLevelFromContract + 1}.svg`} alt="" className='absolute brightness-50 blur-xl w-full h-full' />
+                        <div className='flex justify-center items-center flex-col absolute h-full w-full'>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-14">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                            </svg>
+
+
+                            <p className='font-semibold' >Level {userLevelFromContract + 1}</p>
+                        </div>
                     </div>
                 </div>
             </div >

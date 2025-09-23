@@ -44,7 +44,7 @@ export default function Navbar() {
     };
     return (
         <nav className="bg-gray-800/75 ">
-            <div className='flex items-center justify-between py-4 container mx-auto px-56'>
+            <div className='flex items-center justify-between py-4  mx-auto px-56'>
                 <div className="text-2xl font-bold text-gray-300 font-mono">
                     Dapp
                 </div>

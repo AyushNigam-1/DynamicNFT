@@ -65,23 +65,22 @@ export async function POST(request) {
 
     // Get hoursPerLevel from contract
     const hoursPerLevel = Number(await contract.hoursPerLevel());
-    const secondsPerLevel = hoursPerLevel * 3600; // convert hours -> seconds
+    const secondsPerLevel = hoursPerLevel * 3600;
 
-    // Progressive level calculation
     let newLevel = 1;
     while (totalTime >= secondsPerLevel * newLevel) {
       newLevel++;
     }
 
-    // Encode and hash the message
+    // Correct: solidityPacked encoding
     const messageHash = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
+      ethers.solidityPacked(
         ["address", "uint256", "uint256", "address"],
-        [to, totalTime, newLevel, contract.target]
+        [to, BigInt(totalTime), BigInt(newLevel), contract.target]
       )
     );
 
-    // Sign the message
+    // Correct: sign with EIP-191 prefix
     const signature = await signer.signMessage(ethers.getBytes(messageHash));
 
     return NextResponse.json({
