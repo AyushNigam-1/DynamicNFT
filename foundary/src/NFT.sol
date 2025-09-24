@@ -90,7 +90,7 @@ contract StudyNFTUpgradeable is Initializable, ERC721URIStorageUpgradeable, Owna
 
         // Recover signer
         address recoveredSigner = ECDSA.recover(ethSignedMessageHash, signature);
-        require(recoveredSigner == owner(), "Invalid signature");
+        require(recoveredSigner == signer, "Invalid signature");
 
         // Update stats
         StudyStats storage stats = studyStats[user];
@@ -100,6 +100,11 @@ contract StudyNFTUpgradeable is Initializable, ERC721URIStorageUpgradeable, Owna
         emit StudyLogged(user, totalHours, newLevel);
     }
 
+    function getTotalHoursForLevel(address user) public view returns (uint256) {
+        require(studyStats[user].tokenId > 0, "User does not have an NFT yet");
+        uint256 currentLevel = studyStats[user].level;
+        return currentLevel * hoursPerLevel;
+    }
 
     /// @notice Returns the current level of a user
     function getLevel(address user) public view returns (uint256) {

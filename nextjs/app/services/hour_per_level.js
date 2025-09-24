@@ -2,11 +2,11 @@
  * Get HOURS_PER_LEVEL constant from contract
  * @param {ethers.Contract} contract
  */
-export async function getHoursPerLevel(contract) {
+export async function getHoursPerLevel(contract, user) {
     if (!contract) throw new Error("Contract not initialized");
 
     try {
-        const hours = await contract.hoursPerLevel();
+        const hours = await contract.getTotalHoursForLevel(user);
         console.log("hours2", hours)
         return { success: true, hours: Number(hours) };
     } catch (err) {

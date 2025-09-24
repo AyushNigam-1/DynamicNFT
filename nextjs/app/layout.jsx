@@ -25,7 +25,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased  `}>
-        <div className="min-h-screen bg-gradient-to-r from-gray-800 via-gray-500 to-gray-800" >
+        <div className="min-h-screen bg-[url(/bg.jpg)] bg-center bg-cover " >
           <WalletProvider>
             {children}
           </WalletProvider>

@@ -43,9 +43,9 @@ export default function Navbar() {
         }, 300); // Wait for the transition to finish
     };
     return (
-        <nav className="bg-gray-800/75 ">
+        <nav className="bg-white/50 backdrop-blur-sm ">
             <div className='flex items-center justify-between py-4  mx-auto px-56'>
-                <div className="text-2xl font-bold text-gray-300 font-mono">
+                <div className="text-2xl font-bold text-gray-600 font-mono">
                     Dapp
                 </div>
                 {account && (
@@ -62,7 +62,7 @@ export default function Navbar() {
                             <div className="fixed inset-0 z-0" onClick={handleCloseMenu}></div>
                         )}
                         {isMenuOpen && (
-                            <div className={`absolute right-0 mt-4 mr-0 w-48 p-2 bg-gray-700 flex flex-col gap-2 rounded-md shadow-lg z-10 transition-all duration-300 transform origin-top-right
+                            <div className={`absolute right-0 mt-4 mr-0 w-48 p-2 bg-gray-600 flex flex-col gap-2 rounded-md shadow-lg z-10 transition-all duration-300 transform origin-top-right
                                 ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
                             >
                                 <p className="block p-2 text-xl truncate text-gray-400 border-b-2 border-gray-600">

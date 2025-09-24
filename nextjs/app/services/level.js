@@ -28,7 +28,6 @@ export async function setLevel(contract, user, totalHours, newLevel, signature) 
     if (typeof newLevel !== "number" || newLevel <= 0) throw new Error("Invalid newLevel");
 
     try {
-        // console.log(`Calling logStudySigned for ${userAddress}...`);
 
         const tx = await contract.logStudySigned(user, totalHours, newLevel, signature);
         const receipt = await tx.wait();

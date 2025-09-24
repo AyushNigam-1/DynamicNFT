@@ -39,10 +39,10 @@ export const Settings = ({ setCustomHours, setCustomMinutes, setCustomSeconds, s
                 }
             `} </style>
             {/* The modal content itself animates scale and opacity based on the `isAnimating` state. */}
-            <div className={`bg-gray-800 rounded-2xl p-5 max-w-xl w-full shadow-lg border border-gray-700 flex flex-col gap-5 transition-all duration-300 ease-in-out  ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`} >
+            <div className={`bg-white/75 text-gray-600 rounded-2xl p-5 max-w-xl w-full  flex flex-col gap-5 transition-all duration-300 ease-in-out  ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`} >
                 <div className="flex flex-col gap-3">
                     <div className='flex justify-between'>
-                        <h2 className="text-2xl font-bold text-center font-mono text-gray-300">Settings</h2>
+                        <h2 className="text-2xl font-bold text-center font-mono ">Settings</h2>
                         <button
                             onClick={handleCloseModal}
                             className=" rounded-md font-semibold text-xl  text-gray-400  transition-all duration-300 transform hover:scale-105 focus:outline-none  flex gap-1 items-center cursor-pointer"
@@ -91,7 +91,7 @@ export const Settings = ({ setCustomHours, setCustomMinutes, setCustomSeconds, s
                         />
                     </div>
                 </div>
-                <div className='flex items-center gap-2 text-gray-300 text-lg  font-mono font-bold'>
+                {/* <div className='flex items-center gap-2 text-gray-300 text-lg  font-mono font-bold'>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.078-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42" />
                     </svg>
@@ -134,7 +134,7 @@ export const Settings = ({ setCustomHours, setCustomMinutes, setCustomSeconds, s
                         </svg>
                         System
                     </button>
-                </div>
+                </div> */}
                 <div className='h-[1px] w-full bg-gray-600' />
                 <div className="flex justify-center space-x-4">
                     <button
