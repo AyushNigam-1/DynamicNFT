@@ -53,21 +53,21 @@ export const Settings = ({ setCustomHours, setCustomMinutes, setCustomSeconds, s
                         </button>
                     </div>
                 </div>
-                <div className='h-[1px] w-full bg-gray-600' />
-                <div className='flex items-center gap-2 text-gray-300 text-lg  font-mono font-bold'>
+                <div className='h-[0.5px] w-full bg-gray-600' />
+                <div className='flex items-center gap-2 text-gray-600 text-lg  font-mono font-bold'>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                     </svg>
                     Timer
                 </div>
-                <div className="flex justify-between p-1 items-center border border-gray-600 rounded-2xl">
+                <div className="flex justify-between p-1 items-center border border-gray-600 text-gray-600 rounded-xl">
                     <div className="flex flex-col gap-1">
                         <input
                             type="number"
                             placeholder="00"
                             value={customHours}
                             onChange={(e) => setCustomHours(e.target.value)}
-                            className="hide-arrows w-40 px-4 py-2 text-center text-white rounded-xl 0 text-lg focus:outline-none "
+                            className="hide-arrows w-40 px-4 py-2 text-center text-gray-600 rounded-xl 0 text-lg focus:outline-none "
                         />
                     </div>
                     :
@@ -77,7 +77,7 @@ export const Settings = ({ setCustomHours, setCustomMinutes, setCustomSeconds, s
                             placeholder="00"
                             value={customMinutes}
                             onChange={(e) => setCustomMinutes(e.target.value)}
-                            className="hide-arrows w-40 px-4 py-2 text-center text-white rounded-xl text-lg focus:outline-none "
+                            className="hide-arrows w-40 px-4 py-2 text-center text-gray-600  rounded-xl text-lg focus:outline-none "
                         />
                     </div>
                     :
@@ -87,7 +87,7 @@ export const Settings = ({ setCustomHours, setCustomMinutes, setCustomSeconds, s
                             placeholder="00"
                             value={customSeconds}
                             onChange={(e) => setCustomSeconds(e.target.value)}
-                            className="hide-arrows w-40 px-4 py-2 text-center text-white rounded-xl  text-lg focus:outline-none "
+                            className="hide-arrows w-40 px-4 py-2 text-center text-gray-600 rounded-xl  text-lg focus:outline-none "
                         />
                     </div>
                 </div>
@@ -135,11 +135,11 @@ export const Settings = ({ setCustomHours, setCustomMinutes, setCustomSeconds, s
                         System
                     </button>
                 </div> */}
-                <div className='h-[1px] w-full bg-gray-600' />
+                {/* <div className='h-[1px] w-full bg-gray-600' /> */}
                 <div className="flex justify-center space-x-4">
                     <button
                         onClick={handleSetTimer}
-                        className="py-2 px-8 rounded-md font-mono text-xl  text-gray-800 bg-gray-400 transition-all duration-300 transform hover:scale-105 focus:outline-none  flex gap-1 items-center cursor-pointer"
+                        className="py-2 px-8 rounded-md font-mono text-xl  text-gray-200 bg-gray-600 transition-all duration-300 transform hover:scale-105 focus:outline-none  flex gap-1 items-center cursor-pointer"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />

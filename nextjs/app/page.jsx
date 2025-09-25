@@ -88,22 +88,22 @@ export default function MetaMaskConnection() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen text-white p-4 font-mono">
-      <div className="w-full max-w-sm p-8 space-y-4 bg-gray-700 rounded-2xl shadow-2xl border border-gray-600">
-        <h1 className="text-4xl font-extrabold text-center text-gray-200">
+      <div className="w-full max-w-sm p-8 space-y-4 bg-white/75 rounded-2xl shadow-2xl ">
+        <h1 className="text-4xl font-extrabold text-center text-gray-600">
           Connect Wallet
         </h1>
 
         {!account ? (
           <div className="flex flex-col items-center space-y-4">
-            <p className="text-center text-gray-400">
+            <p className="text-center text-gray-500">
               Connect your MetaMask wallet to get started.
             </p>
             <button
               onClick={handleConnect}
               disabled={isConnecting || isProcessing}
-              className={`px-6 py-3 cursor-pointer font-semibold text-lg text-gray-800 rounded-xl w-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal-400 ${isConnecting || isProcessing
+              className={`px-6 py-3 cursor-pointer font-semibold text-lg text-gray-200 rounded-xl w-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-teal-400 ${isConnecting || isProcessing
                 ? "bg-gray-500 cursor-not-allowed"
-                : "bg-gray-400 hover:bg-gray-500 hover:text-gray-900"
+                : "bg-gray-600 hover:bg-gray-500 hover:text-gray-200"
                 }`}
             >
               {isConnecting

@@ -1,18 +1,16 @@
 const Timer = ({ totalStudyTime, secondsLeft, isDone, isRunning, startTimer, pauseTimer, resetTimer, setShowSettingsModal, formatTime }) => {
+    console.log("called Timer", totalStudyTime)
     return (
-        <div className='bg-white/50 backdrop-blur-md w-full  rounded-xl flex  flex-col justify-center gap-6 p-6 items-center'>
+        <div className='bg-white/50 z-0 backdrop-blur-md w-full  rounded-xl flex  flex-col justify-center gap-6 p-6 items-center'>
             <div className='flex  items-center gap-2'>
-                <p className='font-mono font-extrabold text-gray-400 text-center text-md' >
-                    Total :
-                </p>
-                <p className='font-mono font-bold text-gray-500 text-center text-xl' >
-                    {formatTime(totalStudyTime)}
+                <p className='font-mono font-extrabold text-gray-400 text-center text-lg' >
+                    Total : {formatTime(totalStudyTime)}
                 </p>
             </div>
             <span className="text-9xl font-mono font-bold text-gray-600">
                 {formatTime(secondsLeft)}
             </span>
-            <p className=" text-gray-400 font-mono font-bold ">
+            <p className=" text-gray-400 font-mono font-bold text-lg">
                 {isDone ? 'Time\'s Up!' : isRunning ? 'In Progress' : 'Ready'}
             </p>
             <div className="flex justify-center space-x-4">

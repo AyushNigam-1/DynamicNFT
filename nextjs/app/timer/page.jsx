@@ -12,6 +12,9 @@ import { getNftUri } from '../services/nft';
 import { getHoursPerLevel } from '../services/hour_per_level';
 import Timer from '../components/Timer';
 import Rewards from '../components/Rewards';
+import RewardPreview from '../components/RewardPreview';
+
+
 export default function Home() {
     const { Wallet, account } = useWallet();
 
@@ -32,7 +35,6 @@ export default function Home() {
     const [userLevelFromContract, setUserLevelFromContract] = useState(0); // State for the user's level from the contract
     const [timeDuration, setTimeDuration] = useState(0);
     const [contract, setContract] = useState(null);
-
 
     useEffect(() => {
         const getContract = async () => {
@@ -64,7 +66,7 @@ export default function Home() {
             }
         };
         fetchTotalStudyTime();
-    }, [isDone]);
+    }, []);
 
 
     useEffect(() => {
@@ -86,7 +88,7 @@ export default function Home() {
             }
         };
         fetchUserLevel();
-    }, [isDone, totalStudyTime, contract]);
+    }, [isDone, contract]);
 
 
     const getNftImageUri = async () => {
@@ -121,6 +123,7 @@ export default function Home() {
     useEffect(() => {
         if (isDone) {
             handleSessionComplete();
+            resetTimer()
         }
     }, [isDone]);
 
@@ -133,7 +136,24 @@ export default function Home() {
             setSecondsLeft(isNaN(savedTime) ? savedDuration : savedTime);
         }
     }, []);
+    const startTimer = () => {
+        if (!isRunning) {
+            setIsRunning(true);
+            setIsDone(false);
+        }
+    };
 
+    const pauseTimer = () => {
+        setIsRunning(false);
+    };
+
+    const resetTimer = () => {
+        setIsRunning(false);
+        setIsDone(false);
+        setSecondsLeft(timeDuration);
+        setShowPopup(false);
+        Cookies.remove('timerSeconds');
+    };
     // Save timer state to cookie every second while running
     useEffect(() => {
         if (isRunning) {
@@ -159,7 +179,7 @@ export default function Home() {
 
             const updatedData = saveTimeResponse.data;
             const updatedTotalTime = updatedData.totalStudyTime;
-            console.log(saveTimeResponse)
+            console.log("saveTimeResponse", updatedTotalTime)
             setTotalStudyTime(updatedTotalTime);
 
             const oldLevel = Math.floor(oldTotalTime / 3600 / hoursPerLevel) + 1;
@@ -262,24 +282,7 @@ export default function Home() {
         }
     };
 
-    const startTimer = () => {
-        if (!isRunning) {
-            setIsRunning(true);
-            setIsDone(false);
-        }
-    };
 
-    const pauseTimer = () => {
-        setIsRunning(false);
-    };
-
-    const resetTimer = () => {
-        setIsRunning(false);
-        setIsDone(false);
-        setSecondsLeft(timeDuration);
-        setShowPopup(false);
-        Cookies.remove('timerSeconds');
-    };
 
     if (hoursPerLevel === 0) {
         return <div className="flex items-center justify-center h-screen text-white">Loading...</div>;
@@ -303,34 +306,30 @@ export default function Home() {
     return (
         <>
             <Navbar />
-            <div className="flex items-center flex-col justify-center px-56 text-white py-8 gap-4  m-auto ">
+            <div className="flex items-center flex-col justify-center px-56 text-white py-6 gap-6  m-auto ">
                 {showPopup && <Notification nftImageUri={nftImageUri} message={popupMessage} onClose={() => setShowPopup(false)} />}
                 <div className='flex w-full gap-8 justify-between items-center'>
-                    <div className='flex gap-2 items-center'>
-                        <p className='font-mono font-bold text-gray-400 text-center text-2xl' >
-                            Level:
-                        </p>
-                        <p className='font-mono font-bold text-gray-600 text-center text-2xl' >
-                            {userLevelFromContract}
+                    <div className='flex gap-2 items-center text-gray-600 font-extrabold '>
+                        <p className='font-mono  text-center text-2xl' >
+                            Level: {userLevelFromContract}
                         </p>
                     </div>
                     <div className='flex gap-2 items-center'>
-                        <p className='font-mono font-bold text-gray-400 text-center text-xl' >
-                            Next Level In :
-                        </p>
-                        <p className='font-mono font-bold text-gray-600 text-center text-2xl' >
-                            {formatTime(Math.max(timeToNextLevelInSeconds, 0))}
+                        <p className='font-mono text-gray-600 font-extrabold  text-center text-2xl' >
+                            Next Level In: {formatTime(Math.max(timeToNextLevelInSeconds, 0))}
                         </p>
                     </div>
                 </div>
                 <Timer isDone={isDone} isRunning={isRunning} pauseTimer={pauseTimer} resetTimer={resetTimer} secondsLeft={secondsLeft} setShowSettingsModal={setShowSettingsModal} startTimer={startTimer} totalStudyTime={totalStudyTime} formatTime={formatTime} />
 
                 {showSettingsModal && <Settings setShowSettingsModal={setShowSettingsModal} setCustomHours={setCustomHours} setCustomMinutes={setCustomMinutes} setCustomSeconds={setCustomSeconds} handleSetTimer={handleSetTimer} customMinutes={customMinutes} customSeconds={customSeconds} customHours={customHours} />}
+                {/* <div className='h-[1px] w-full bg-gray-400' /> */}
 
-                <p className='text-center font-mono font-bold text-gray-500 text-2xl' >
-                    Your Reward
+                <p className='text-center font-mono font-bold text-gray-600 text-2xl' >
+                    Your Rewards
                 </p>
                 <Rewards nftImageUri={nftImageUri} revealPercentage={revealPercentage} userLevelFromContract={userLevelFromContract} />
+
             </div >
         </>
     );
