@@ -12,11 +12,10 @@ import { getNftUri } from '../services/nft';
 import { getHoursPerLevel } from '../services/hour_per_level';
 import Timer from '../components/Timer';
 import Rewards from '../components/Rewards';
-import RewardPreview from '../components/RewardPreview';
 
 
 export default function Home() {
-    const { Wallet, account } = useWallet();
+    const { Wallet } = useWallet();
 
     const [timerDurationInSeconds, setTimerDurationInSeconds] = useState(30 * 60); // Default to 30 minutes
     const [secondsLeft, setSecondsLeft] = useState(timerDurationInSeconds);
@@ -88,7 +87,7 @@ export default function Home() {
             }
         };
         fetchUserLevel();
-    }, [isDone, contract]);
+    }, [isDone, contract, totalStudyTime]);
 
 
     const getNftImageUri = async () => {
@@ -187,8 +186,6 @@ export default function Home() {
             console.log(oldLevel, newLevel)
             if (newLevel > oldLevel) {
                 setIsMinting(true);
-                setPopupMessage("Level Up!");
-                setShowPopup(true);
 
                 try {
                     // 1. Call backend to generate signed message
@@ -222,10 +219,12 @@ export default function Home() {
 
                 } catch (error) {
                     console.error("Error during level-up process:", error);
-                    setPopupMessage("Level-up failed");
+                    // setPopupMessage("Level-up failed");
                 } finally {
                     setIsMinting(false);
                 }
+                setPopupMessage("Level");
+                setShowPopup(true);
             }
 
             else {
@@ -328,8 +327,8 @@ export default function Home() {
                 <p className='text-center font-mono font-bold text-gray-600 text-2xl' >
                     Your Rewards
                 </p>
-                <Rewards nftImageUri={nftImageUri} revealPercentage={revealPercentage} userLevelFromContract={userLevelFromContract} />
-
+                <Rewards setPopupMessage={setPopupMessage}
+                    setShowPopup={setShowPopup} nftImageUri={nftImageUri} revealPercentage={revealPercentage} userLevelFromContract={userLevelFromContract} />
             </div >
         </>
     );

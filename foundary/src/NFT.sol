@@ -61,7 +61,7 @@ contract StudyNFTUpgradeable is Initializable, ERC721URIStorageUpgradeable, Owna
         studyStats[to] = StudyStats({
             totalHours: 0,
             tokenId: newItemId,
-            level: 1
+            level: 0
         });
 
         emit Minted(to, newItemId);
@@ -121,7 +121,7 @@ contract StudyNFTUpgradeable is Initializable, ERC721URIStorageUpgradeable, Owna
 
         string memory imageLink = string(
             abi.encodePacked(
-                "https://gold-endless-fly-679.mypinata.cloud/ipfs/bafybeibjq6ut5gtzfvjxsrf336h3q5sjko56mzhpiloa2b7j6mufg6h2kq/level-",
+                "https://gold-endless-fly-679.mypinata.cloud/ipfs/bafybeihjewyl2sgnf57zsuov3vt7zl7anrtu2jikhavulcczajk4hi7s64/level-",
                 level.toString(),
                 ".svg"
             )

@@ -35,14 +35,14 @@ export default function Notification({ nftImageUri, message, onClose }) {
                     <img src={nftImageUri} alt="" className="h-80 w-80" />
                     <button
                         onClick={handleClose}
-                        className="px-6 py-3 font-semibold text-lg text-gray-900 bg-gray-300 rounded-md  hover:bg-gray-400 transition-colors duration-200 focus:outline-none cursor-pointer flex items-center gap-1"
+                        className="px-6 py-2 font-semibold text-xl text-gray-200 bg-gray-600 rounded-md  hover:bg-gray-400 transition-colors duration-200 focus:outline-none cursor-pointer flex items-center gap-2"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
                             <path strokeLinecap="round" strokeLinejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                         </svg>
                         Close
                     </button>
-                </> : <><div  >
+                </> : message === "View" ? <></> : <><div>
                     <img width="98" height="98" src="https://img.icons8.com/emoji/98/party-popper.png" alt="party-popper" />
                 </div>
                     <h4 className="text-3xl font-extrabold "> Hurrah, Session Completed! </h4>

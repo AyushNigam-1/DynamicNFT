@@ -45,9 +45,9 @@ export default function Navbar() {
     };
     return (
         <nav className="bg-white/50 backdrop-blur-sm ">
-            <div className='flex items-center justify-between py-4  mx-auto px-56 font-mono'>
-                <div className="text-2xl font-bold text-gray-600 ">
-                    Dapp
+            <div className='flex items-center justify-between py-2  mx-auto px-56 font-mono'>
+                <div className="text-3xl font-bold text-gray-600 ">
+                    Demo
                 </div>
                 {account && (
                     <div className="relative">
@@ -71,9 +71,6 @@ export default function Navbar() {
                             <div className={`absolute right-0 mt-4 mr-0 w-48 p-2 bg-gray-600  flex flex-col gap-2 rounded-md shadow-lg z-10 transition-all duration-300 transform origin-top-right
                                 ${isAnimating ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`}
                             >
-                                {/* <p className="block p-2 text-xl truncate text-gray-400 border-b-2 border-gray-600">
-                                    {account}
-                                </p> */}
                                 <button
                                     onClick={handleLogout}
                                     className="cursor-pointer w-full text-left flex gap-2 items-center  p-2 text-xl text-gray-200 hover:bg-gray-500 rounded-md"

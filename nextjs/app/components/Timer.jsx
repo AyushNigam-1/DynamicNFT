@@ -1,5 +1,4 @@
 const Timer = ({ totalStudyTime, secondsLeft, isDone, isRunning, startTimer, pauseTimer, resetTimer, setShowSettingsModal, formatTime }) => {
-    console.log("called Timer", totalStudyTime)
     return (
         <div className='bg-white/50 z-0 backdrop-blur-md w-full  rounded-xl flex  flex-col justify-center gap-6 p-6 items-center'>
             <div className='flex  items-center gap-2'>

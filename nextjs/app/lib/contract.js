@@ -5,7 +5,7 @@ import path from 'path';
 // Load the private key from environment variables.
 const PRIVATE_KEY = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d";
 
-const CONTRACT_ADDRESS = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
 const RPC_URL = "http://127.0.0.1:8545";
 
 // --- Load the ABI directly from the Foundry artifact ---  
@@ -16,9 +16,6 @@ try {
     CONTRACT_ABI = artifact.abi;
 } catch (error) {
     console.error("Failed to load contract ABI from Foundry artifact:", error);
-    CONTRACT_ABI = [
-        "function mint(address to)"
-    ];
 }
 
 // Initialize the provider and a signer for the backend.
